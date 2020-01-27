@@ -1,0 +1,103 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+component autodebian {
+
+  package unify
+
+  package upgrade
+
+  package sourcez
+
+  package aptitude
+
+  package jsnode
+
+  package pyp
+
+  package sysconfig
+
+  package servicez
+
+  package users
+
+  package groups
+
+  package userconfig
+
+  package task
+
+  package constructor
+
+  package desktop
+
+  package basik
+
+  package iso
+
+  artifact home
+
+  artifact kick
+
+  upgrade --* unify
+
+  sourcez --* unify
+
+  aptitude --* unify
+
+  jsnode --* unify
+
+  pyp --* unify
+
+  sysconfig --* unify
+
+  servicez --* unify
+
+  users --* unify
+
+  groups --* unify
+
+  userconfig --* unify
+
+  task --* unify
+
+  constructor --* upgrade
+
+  constructor --* sourcez
+
+  constructor --* aptitude
+
+  constructor --* jsnode
+
+  constructor --* pyp
+
+  constructor --* sysconfig
+
+  constructor --* servicez
+
+  constructor --* users
+
+  constructor --* groups
+
+  constructor --* userconfig
+
+  constructor --* task
+
+  basik --* constructor
+
+  desktop --* constructor
+
+  desktop --> basik : use config
+
+  desktop --> home : uses
+
+  kick --> basik : uses
+
+  kick --> desktop : uses
+
+  iso --> kick : uses
+
+}
+@enduml

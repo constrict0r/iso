@@ -1,0 +1,41 @@
+---
+galaxy_info:
+  author: constrict0r
+  description: Creates a preseeded Debian iso installer.
+  company: Amanita.
+
+  license: MIT.
+
+  min_ansible_version: 2.8
+
+  platforms:
+    - name: Debian
+      versions:
+        - stretch
+        - buster
+
+    - name: Ubuntu
+      versions:
+        - xenial
+
+  galaxy_tags:
+    - auto
+    - autodebian
+    - apt
+    - debian
+    - devops
+    - doombots
+    - linux
+    - ubuntu
+
+dependencies:
+  - role: constrict0r.unify
+    validate: true
+    update: false
+    items: []
+    titles: ''
+    expand: false
+    secondary: false
+    items_b: []
+    titles_b: ''
+    expand_b: false

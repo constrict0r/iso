@@ -1,0 +1,27 @@
+---
+# Tasks to make a variable copy.
+# The variable name to copy is always 'variable_value'.
+# Tthe variable is printed using the echo bash and stored on variable_copy.
+# The copy is to avoid the Ansible error: undefined_variable is undefined.
+
+- name: Copy variable.
+  debug:
+    msg:
+      - '--------------------------------------------------------------------'
+      - "Copying variable '{{ variable_name }}' ..."
+      - '--------------------------------------------------------------------'
+
+- name: Copy original variable.
+  debug:
+    var: variable_value
+  register: variable_debug
+
+- name: Register copied variable value.
+  command: echo "{{ variable_debug.variable_value }}"
+  register: variable_echo
+  changed_when: false
+  check_mode: false
+
+- name: Store copied variable value.
+  set_fact:
+    variable_copy: "{{ variable_echo.stdout }}"

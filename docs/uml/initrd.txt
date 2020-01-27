@@ -1,0 +1,23 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Create initrd directory;
+
+:Decompress initrd.gz to initrd;
+
+:Copy preseed template to initrd;
+
+:Set installer answers on preseed template;
+
+:Remove old initrd.gz;
+
+:Recompress preseeded initrd.gz;
+
+:Remove initrd directory;
+
+end
+@enduml

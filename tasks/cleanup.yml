@@ -1,0 +1,49 @@
+---
+# Tasks for cleaning.
+
+- name: Handle cleanup.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Cleaning up files ...'
+      - '____________________________________________________________________'
+
+- name: Unmount Debian ISO.
+  mount:
+    path: "{{ iso_mount_ }}"
+    state: unmounted
+  become: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: unitTest - Unmounted Debian ISO.
+  fail:
+    msg: "{{ iso_mount_ }} must not be a mount point"
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - iso_mount_ is is_mount
+  tags:
+    - test
+
+- name: Delete iso_mount.
+  file:
+    path: "{{ iso_mount_ }}"
+    state: absent
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - delete_iso_mount | bool
+
+- name: Delete remaster_mount.
+  file:
+    path: "{{ remaster_mount_ | regex_replace(iso_mount_ | basename) }}"
+    state: absent
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - delete_remaster_mount | bool

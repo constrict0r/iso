@@ -1,0 +1,74 @@
+---
+# Make copies of variables that will be modified, this because if the user
+# passed variables using --extra-vars, then its values cannot be modified.
+
+- name: Handle variables.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Handling variables ...'
+      - '____________________________________________________________________'
+
+# iso_path
+- name: Set iso_path_ variable as empty.
+  set_fact:
+    iso_path_: ''
+
+- name: Copy iso_path variable.
+  include_tasks: copy.yml
+  vars:
+    variable_name: 'iso_path'
+    variable_value: "{{ iso_path | default('') }}"
+
+- name: Set iso_path_ = iso_path.
+  set_fact:
+    iso_path_: "{{ iso_path }}"
+  when: variable_copy is not variable_empty
+
+# iso_mount
+- name: Set iso_mount_ variable as ~/original_iso/.
+  set_fact:
+    iso_mount_: "{{ ansible_user_dir }}/original_iso/"
+
+- name: Copy iso_mount variable.
+  include_tasks: copy.yml
+  vars:
+    variable_name: 'iso_mount'
+    variable_value: "{{ iso_mount | default('') }}"
+
+- name: Set iso_mount_ = iso_mount.
+  set_fact:
+    iso_mount_: "{{ iso_mount }}"
+  when: variable_copy is not variable_empty
+
+# remaster_mount.
+- name: Set remaster_mount_ variable as ~/remaster_iso/.
+  set_fact:
+    remaster_mount_: "{{ ansible_user_dir }}/remaster_iso/"
+
+- name: Copy remaster_mount variable.
+  include_tasks: copy.yml
+  vars:
+    variable_name: 'remaster_mount'
+    variable_value: "{{ remaster_mount | default('') }}"
+
+- name: Set remaster_mount_ = remaster_mount.
+  set_fact:
+    remaster_mount_: "{{ remaster_mount }}"
+  when: variable_copy is not variable_empty
+
+# remaster_destination.
+- name: Set remaster_destination variable as ~/remaster.iso.
+  set_fact:
+    remaster_destination_: "{{ ansible_user_dir }}/remaster.iso"
+
+- name: Copy remaster_destination variable.
+  include_tasks: copy.yml
+  vars:
+    variable_name: 'remaster_destination'
+    variable_value: "{{ remaster_destination | default('') }}"
+
+- name: Set remaster_destination_ = remaster_destination.
+  set_fact:
+    remaster_destination_: "{{ remaster_destination }}"
+  when: variable_copy is not variable_empty

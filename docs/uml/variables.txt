@@ -1,0 +1,33 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+if (iso_path empty?) then (yes)
+  :iso_path_ = '';
+else (no)
+  :iso_path_ = iso_path;
+endif
+
+if (iso_mount empty?) then (yes)
+  :iso_mount_ = '';
+else (no)
+  :iso_mount_ = iso_mount;
+endif
+
+if (remaster_mount empty?) then (yes)
+  :remaster_mount_ = '';
+else (no)
+  :remaster_mount_ = remaster_mount;
+endif
+
+if (remaster_destination empty?) then (yes)
+  :remaster_destination_ = '';
+else (no)
+  :remaster_destination_ = remaster_destination;
+endif
+
+end
+@enduml

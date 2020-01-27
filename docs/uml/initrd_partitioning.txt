@@ -1,0 +1,18 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Add partitioning.cfg to preseed.cfg;
+
+  if (partition type != none) then (yes)
+    :Add <partition type>.cfg to preseed.cfg;
+
+    :Preseed device;
+  else (no)
+  endif
+
+end
+@enduml

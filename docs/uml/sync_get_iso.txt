@@ -1,0 +1,33 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+if (iso_path is empty?) then (yes)
+  :Set iso_path = iso_url;
+else (no)
+endif
+
+if (iso_path is a file?) then (yes)
+  if (iso_path contains file:///?) then (yes)
+  else (no)
+    :Add file:/// to iso_path;
+  endif
+else (no)
+  if (MD5SUMS file available?) then (yes)
+    :Download MD5SUMS;
+    :Obtain iso name from MD5SUMS;
+    :Update iso_path to include iso name;
+  else (no)
+    :Show error;
+    end
+  endif
+endif
+
+:Fetch iso;
+:Set iso_path = obtained iso path;
+
+end
+@enduml

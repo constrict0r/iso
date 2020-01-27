@@ -1,0 +1,112 @@
+---
+# Sync isos tasks.
+
+- name: Sync isos.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Syncing isos ...'
+      - '____________________________________________________________________'
+
+- import_tasks: get-iso.yml
+  tags:
+    - iso
+
+- name: Obtains iso_mount full system path.
+  command: echo "{{ iso_mount_ | realpath }}"
+  register: iso_mount_full
+  changed_when: false
+
+- name: Update iso_mount to full system path.
+  set_fact:
+    iso_mount_: "{{ iso_mount_full.stdout }}"
+
+- name: Unmount Debian ISO.
+  mount:
+    path: "{{ iso_mount_ }}"
+    state: unmounted
+  become: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: unitTest - Unmounted Debian ISO.
+  fail:
+    msg: "{{ iso_mount_ }} must not be a mount point"
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - iso_mount_ is is_mount
+  tags:
+    - test
+
+- name: Create directory to mount ISO.
+  file:
+    path: "{{ iso_mount_ }}"
+    state: directory
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Mount Debian ISO.
+  mount:
+    path: "{{ iso_mount_ }}"
+    src: "{{ iso_path_ }}"
+    fstype: iso9660
+    opts: ro,noauto
+    state: mounted
+  become: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: unitTest - Mounted Debian ISO.
+  fail:
+    msg: "{{ iso_mount_ }} must be a mount point"
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - not iso_mount_ is is_mount
+  tags:
+    - test
+
+- name: Obtains remaster_mount full system path.
+  command: echo "{{ remaster_mount_ | realpath }}"
+  register: remaster_mount_full
+  changed_when: false
+
+- name: Update remaster_mount to full system path.
+  set_fact:
+    remaster_mount_: "{{ remaster_mount_full.stdout }}"
+
+- name: Create directory to preseeded ISO.
+  file:
+    path: "{{ remaster_mount_ }}"
+    state: directory
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Sync files between original iso and remaster.
+  synchronize:
+    mode: push
+    src: "{{ iso_mount_ }}"
+    dest: "{{ remaster_mount_ }}"
+    rsync_opts:
+      - "-a"
+      - "-H"
+      - "--exclude=TRANS.TBL"
+  delegate_to: localhost
+  become: true
+  when: not ansible_check_mode
+
+- name: Update remaster_mount to include iso_mount basename.
+  set_fact:
+    remaster_mount_: "{{ remaster_mount_ }}/{{ iso_mount_ | basename }}"
+
+- name: unitTest - Synced files between original iso and remaster.
+  file:
+    path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd.gz"
+    state: file
+  delegate_to: localhost
+  changed_when: false
+  tags:
+    - test

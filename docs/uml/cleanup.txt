@@ -1,0 +1,21 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Umount original iso;
+
+if (Delete original iso directory?) then (yes)
+  :Delete original iso directory;
+else (no)
+endif
+
+if (Delete remaster iso directory?) then (yes)
+  :Delete remaster iso directory;
+else (no)
+endif
+
+end
+@enduml

@@ -1,0 +1,19 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Get iso;
+
+:Create original iso directory;
+
+:Create remaster iso directory;
+
+:Mount original iso;
+
+:Synchronize original iso with remaster iso;
+
+end
+@enduml

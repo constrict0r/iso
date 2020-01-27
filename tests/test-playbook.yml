@@ -1,0 +1,181 @@
+---
+# Iso tests, from root folder run: ./testme.sh.
+
+- name: Create Debian preseeded iso - tests.
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+  - name: Requirements setup.
+    debug:
+      msg:
+        - '__________________________________________________________________'
+        - 'Setting up requirements.'
+        - '__________________________________________________________________'
+
+  - name: Download netinstall iso file.
+    get_url:
+      url: https://is.gd/1XtKpF
+      dest: /tmp/debian-amd64-netinst.iso
+    delegate_to: localhost
+
+  - name: Create iso_mount directory.
+    file:
+      path: /tmp/iso_mount
+      state: directory
+
+  - name: Create remaster_mount directory.
+    file:
+      path: /tmp/remaster_mount
+      state: directory
+
+  - name: Test with null.
+    debug:
+      msg:
+        - '__________________________________________________________________'
+        - 'Testing with null ...'
+        - ' ,xXXXXx'
+        - ',XXXXXXXX'
+        - 'XXXXXXXXXX'
+        - '````XX```'
+        - '    XX'
+        - '    XX'
+        - '    XX'
+        - '__________________________________________________________________'
+
+  - name: Run iso preseed with null.
+    import_role:
+      name: constrict0r.iso
+    vars:
+      iso_path: null
+      iso_mount: null
+      remaster_mount: null
+      remaster_destination: null
+
+  - name: Test with none.
+    debug:
+      msg:
+        - '__________________________________________________________________'
+        - 'Testing with none ...'
+        - '   __.......__'
+        - ' .`           `.'
+        - ':               :'
+        - ':               :'
+        - ' `.._________..`'
+        - '      :   :'
+        - '      :   :'
+        - '      :   :'
+        - '      `...`'
+        - '__________________________________________________________________'
+
+  - name: Run iso preseed with none.
+    import_role:
+      name: constrict0r.iso
+    vars:
+      iso_path:
+      iso_mount:
+      remaster_mount:
+      remaster_destination:
+
+  - name: Test with undefined.
+    debug:
+      msg:
+        - '__________________________________________________________________'
+        - 'Testing with undefined ...'
+        - '         ___..._'
+        - '    _,--`       ``-.'
+        - '  ,`.  .            \'
+        - ',/:. .     .       .'
+        - '|;..  .      _..--'
+        - '`--:...-,-```\'
+        - '        |:.  `.'
+        - '        l;.   l'
+        - '        `|:.   |'
+        - '         |:.   `.,'
+        - '        .l;.    j, ,'
+        - '     `.\`;:.   //,/'
+        - '      .\)`;,|\`/('
+        - '       ` `    `(,'
+        - '__________________________________________________________________'
+
+  - name: Run iso preseed with undefined.
+    import_role:
+      name: constrict0r.iso
+    vars:
+      iso_path: "{{ undefined_variable }}"
+      iso_mount: "{{ undefined_variable }}"
+      remaster_mount: "{{ undefined_variable }}"
+      remaster_destination: "{{ undefined_variable }}"
+
+  - name: Test with empty.
+    debug:
+      msg:
+        - '__________________________________________________________________'
+        - 'Testing with empty ...'
+        - '        __....._' 
+        - '     .``         ``' 
+        - '   ."               `'  
+        - '  .                   ' 
+        - ' .       __...__       '
+        - '. _.--```       ```--._ '
+        - ':`                     `'
+        - ' `-.__    :    :   __.-`'
+        - '      ```-:    :-```' 
+        - '         J     '
+        - '         :     '
+        - '        J       '
+        - '        :       '
+        - '        `._____.'
+        - '__________________________________________________________________'
+
+  - name: Run iso preseed with empty.
+    import_role:
+      name: constrict0r.iso
+    vars:
+      iso_path: ''
+      iso_mount: ''
+      remaster_mount: ''
+      remaster_destination: ''
+
+  - name: Test with non-empty.
+    debug:
+      msg:
+        - '__________________________________________________________________'
+        - 'Testing with non-empty ...'
+        - '        __....._'
+        - '     .`` _  o    ``'
+        - '   ." O (_)     () o`'
+        - '  .           O        '
+        - ' . ()   o__...__    O   '
+        - '. _.--```       ```--._ '
+        - ':`                     `'
+        - ' `-.__    :    :   __.-`'
+        - '      ```-:    :-```'
+        - '         J     '
+        - '         :     '
+        - '        J       '
+        - '        :       '
+        - '        `._____.'
+        - '__________________________________________________________________'
+
+  - name: Run iso preseed with empty.
+    import_role:
+      name: constrict0r.iso
+    vars:
+      iso_path: /tmp/debian-amd64-netinst.iso
+      iso_mount: /tmp/iso_mount
+      remaster_mount: /tmp/remaster_mount
+      remaster_destination: /tmp/remaster.iso
+
+  - name: Verify iso created.
+    file:
+      path: /tmp/remaster.iso
+      state: file
+
+# Cleanup files.
+  - name: Cleanup /tmp/debian-amd64-netinst.iso file.
+    file:
+      path: /tmp/debian-amd64-netinst.iso
+      state: absent
+    delegate_to: localhost

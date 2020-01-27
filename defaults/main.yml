@@ -1,0 +1,69 @@
+---
+# File path to local iso.
+iso_path:
+
+# Url to download a Debian iso.
+iso_url: https://mirrors.ucr.ac.cr/debian-cd/current/amd64/iso-cd
+
+# Directory path where the iso will be downloaded.
+iso_destination: "{{ ansible_user_dir }}"
+
+# Directory path where to mount the original Debian iso.
+iso_mount: "{{ ansible_user_dir }}/original_iso"
+delete_iso_mount: false
+
+# Directory path where to copy the files to preseed.
+remaster_mount: "{{ ansible_user_dir }}/remaster_iso"
+delete_remaster_mount: false
+
+# File path where to write the preseeded iso.
+remaster_destination: "{{ ansible_user_dir }}/remaster.iso"
+
+# Debian iso architecture.
+# Valid types are:
+#   amd => To install x86_64 machines.
+#   386 => To install x86 machines.
+#   a64 => To install arm machines.
+iso_architecture: amd
+
+# Path to a folder containing extra firmware to be added to the iso.
+firmware_path:
+
+# Apply preseeding or not.
+# If set to no the grub installation step is not preseeded either.
+preseed: false
+
+# Apply preseeding to wireless network or not.
+preseed_wireless: false
+
+# Apply preseeding to partitioning or not.
+preseed_partitioning: false
+
+# Wheter to apply desktop configuration on the new installation or not (see
+# https://github.com/constrict0r/desktop).
+preseed_desktop: false
+
+# Absolute file path to apply custom configuration from a file on the new
+# installation or not (see https://github.com/constrict0r/constructor).
+preseed_custom:
+
+# Wheter to preseed or not the last question, this to prevent
+# multiple installations if the machine keeps booting from usb drive.
+preseed_last_question: false
+
+# Debian installer answers.
+locale: es_CR
+keyboard: latam
+networkname: 'mynetwork'
+networkpass: '12345678'
+hostname: debian
+domain: debian
+rootpass: debian
+username: debian
+userpass: debian
+
+# Debian mirror url.
+mirror: https://mirrors.ucr.ac.cr
+
+# Device used for partitioning and where to install grub, i.e.: sda, hda.
+device: sda

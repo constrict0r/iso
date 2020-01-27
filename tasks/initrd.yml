@@ -1,0 +1,109 @@
+---
+# Tasks to modify the initrd.gz file.
+
+- name: Handle initrd.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Modifying initrd.gz ...'
+      - '____________________________________________________________________'
+
+- name: Create directory to copy initrd files.
+  file:
+    path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd"
+    state: directory
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Check if decompressed initrd.gz exists.
+  stat:
+    path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd/init"
+  register: decompressed_initrd
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Set initrd path
+  set_fact:
+    initrd_path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd"
+
+- name: Decompress initrd.gz.
+  command: bash -c "cd {{ initrd_path }} && zcat ../initrd.gz | cpio -i -d"
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - not decompressed_initrd.stat.exists
+
+- name: unitTest - Decompreseed initrd.gz.
+  file:
+    path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd/init"
+    state: file
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+  tags:
+    - test
+
+- name: Set preseed_cfg_path as remaster_mount/install.xxx.
+  set_fact:
+    preseed_cfg_path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}"
+
+- name: Copy custom configuration file if specified.
+  copy:
+    src: "{{ preseed_custom }}"
+    dest: "{{ preseed_cfg_path }}/initrd/custom-config.yml"
+    force: true
+  become: true
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - preseed_custom is variable_path
+
+- name: Preseed installer answers.
+  template:
+    src: preseed.j2
+    dest: "{{ preseed_cfg_path }}/initrd/preseed.cfg"
+  become: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Remove old initrd.gz.
+  file:
+    path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd.gz"
+    state: absent
+  become: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Check if old initrd.gz was removed.
+  stat:
+    path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd.gz"
+  register: old_initrd
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Recompress preseeded initr.gz.
+  shell: set -o pipefail && (cd {{ initrd_path }} \
+    && find . | cpio -o -H newc | gzip -9 \
+    > {{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd.gz)
+  args:
+    executable: /bin/bash
+  become: true
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - not old_initrd.stat.exists
+
+- name: Remove initrd directory.
+  file:
+    path: "{{ remaster_mount_ }}/install.{{ iso_architecture }}/initrd"
+    state: absent
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+  tags:
+    - cleanup

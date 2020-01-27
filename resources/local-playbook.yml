@@ -1,0 +1,11 @@
+---
+# Playbook to locally test the role.
+# Run from the repository root:
+# ansible-playbook -i tests/inventory resources/local-playbook.yml -K
+
+- name: Creates a preseeded Debian iso installer - local tests.
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - {role: ../iso}

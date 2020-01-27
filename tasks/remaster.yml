@@ -1,0 +1,125 @@
+---
+# Tasks for remastering an ISO file.
+
+- name: Remaster ISO file.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Remastering ISO ...'
+      - '____________________________________________________________________'
+
+# 18 - Set extra firmware.
+# raw.githubusercontent.com/constrict0r/images/master/iso/18-add-firmware.png
+- name: Add firmware.
+  command: cp -r {{ firmware_path }}/. {{ remaster_mount_ }}/firmware
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - firmware_path is variable_path
+
+- name: unitTest - Added firmware.
+  shell: set -o pipefail && (ls {{ firmware_path }} | grep deb)
+  args:
+    executable: /bin/bash
+  register: result
+  changed_when: false
+  delegate_to: localhost
+  failed_when: result.stdout is none
+  when:
+    - not ansible_check_mode
+    - firmware_path is variable_path
+  tags:
+    - test
+
+- name: Remove old md5.
+  file:
+    path: "{{ remaster_mount_ }}/md5sum.txt"
+    state: absent
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Check if old md5 was removed.
+  stat:
+    path: "{{ remaster_mount_ }}/md5sum.txt"
+  register: old_md5
+  become: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Set new md5.
+  shell: "md5sum `find {{ remaster_mount_ }} -type f` \
+    > {{ remaster_mount_ }}/md5sum.txt"
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - not old_md5.stat.exists
+
+- name: unitTest - Setted new md5.
+  file:
+    path: "{{ remaster_mount_ }}/md5sum.txt"
+    state: file
+  changed_when: false
+  delegate_to: localhost
+  tags:
+    - test
+
+- name: Ensure isolinux is installed.
+  apt:
+    name: isolinux
+    state: present
+  become: true
+  register: result
+  retries: 2
+  until: result is success
+  when: not ansible_check_mode
+
+- name: Ensure xorriso is installed.
+  apt:
+    name: xorriso
+    state: present
+  become: true
+  register: result
+  retries: 2
+  until: result is success
+  when: not ansible_check_mode
+
+- name: Remove old remaster iso.
+  file:
+    path: "{{ remaster_destination_ }}"
+    state: absent
+    force: true
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Show where remaster.iso will be created.
+  debug:
+    msg: "Creating {{ remaster_destination_ }}"
+
+- name: Create remaster iso.
+  command: "xorriso -as mkisofs -o {{ remaster_destination_ }} \
+    -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
+    -c isolinux/boot.cat -b isolinux/isolinux.bin -no-emul-boot \
+    -boot-load-size 4 -boot-info-table {{ remaster_mount_ }}"
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: unitTest - Created remaster iso.
+  file:
+    path: "{{ remaster_destination_ }}"
+    state: file
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+  tags:
+    - test

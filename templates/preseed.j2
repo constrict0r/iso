@@ -1,0 +1,173 @@
+# Select language and country.
+# 00 - https://github.com/constrict0r/images/blob/master/iso/00-language.png
+d-i debian-installer/locale string {{ locale }}
+
+# Select keyboard map.
+# 01 - https://github.com/constrict0r/images/blob/master/iso/01-keyboard.png
+d-i keyboard-configuration/xkb-keymap select {{ keyboard }}
+
+# Set hostname.
+# 02 - https://github.com/constrict0r/images/blob/master/iso/02-hostname.png
+d-i netcfg/get_hostname string {{ hostname }}
+
+# Set domain name.
+# 03 - https://github.com/constrict0r/images/blob/master/iso/03-domain-name.png
+d-i netcfg/get_domain string {{ domain }}
+
+# Set root password and confirmation.
+# 04 - https://github.com/constrict0r/images/blob/master/iso/04-root-pass.png
+d-i passwd/root-password password {{ rootpass }}
+d-i passwd/root-password-again password {{ rootpass }}
+
+# Set user full name and username.
+# 05 - https://github.com/constrict0r/images/blob/master/iso/05-username.png
+d-i passwd/user-fullname string {{ username }}
+d-i passwd/username string {{ username }}
+
+# Set user password.
+# 06 - https://github.com/constrict0r/images/blob/master/iso/06-user-pass.png
+d-i passwd/user-password password {{ userpass }}
+d-i passwd/user-password-again password {{ userpass }}
+
+# 07 - https://github.com/constrict0r/images/blob/master/iso/07-add-firmware.png
+
+{%- if preseed_wireless == 'true' or preseed_wireless == 'True' or preseed_wireless == 'yes' -%}
+
+# Newline.
+
+# Enable auto select interface.
+# 08 - https://github.com/constrict0r/images/blob/master/iso/19-network-interface.png
+d-i netcfg/choose_interface select auto
+d-i netcfg/wireless_show_essids select manual
+
+# Set network name.
+# 09 - https://github.com/constrict0r/images/blob/master/iso/20-wireless-name.png
+d-i netcfg/wireless_essid string {{ networkname }}
+
+# Select network security type.
+# 10 - https://github.com/constrict0r/images/blob/master/iso/21-wireless-pass-type.png
+d-i netcfg/wireless_security_type select wpa
+
+# Set network password.
+# 11 - https://github.com/constrict0r/images/blob/master/iso/21-wireless-pass.png
+d-i netcfg/wireless_wpa string {{ networkpass }}
+
+# Newline.
+
+{%- endif -%}
+
+{%- if preseed_partitioning == 'true' or preseed_partitioning == 'True' or preseed_partitioning == 'yes' -%}
+
+# Newline.
+
+# Device to partitioning.
+d-i partman-auto/disk string /dev/{{ device }}
+
+# Use lvm partitioning.
+# 12 - https://github.com/constrict0r/images/blob/master/iso/07-partitioning-guided-manual-whole.png
+d-i partman-auto/method string lvm
+
+# Confirm remove old partitions.
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-md/device_remove_md boolean true
+
+d-i partman-auto-lvm/guided_size string max
+
+# Set partitioning guided/manual - Whole disk, all files in one partition.
+# 13 - https://github.com/constrict0r/images/blob/master/iso/08-partitioning-whole.png
+d-i partman-auto/choose_recipe select atomic
+
+# Confirm end partitioning.
+# 14 - https://github.com/constrict0r/images/blob/master/iso/09-partitioning-end-partitioning.png
+d-i partman/choose_partition select finish
+
+# Confirm write changes.
+# 15 - https://github.com/constrict0r/images/blob/master/iso/10-partitioning-write-changes.png
+d-i partman/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm_nooverwrite boolean true
+d-i partman/confirm boolean true
+d-i partman-lvm/confirm_nooverwrite boolean true
+d-i partman-lvm/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i partman-md/confirm boolean true
+
+# Newline.
+
+{%- endif -%}
+
+# Scan another DVD?
+# 16 - https://github.com/constrict0r/images/blob/master/iso/11-another-dvd.png
+apt-cdrom-setup apt-setup/cdrom/set-first boolean false
+
+# Select mirror.
+# 17 - https://github.com/constrict0r/images/blob/master/iso/12-mirror.png
+d-i mirror/country string manual
+d-i mirror/http/hostname string {{ mirror }}
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+
+# Set popularity-contest to false.
+# 18 - https://github.com/constrict0r/images/blob/master/iso/13-popularity-contest.png
+popularity-contest popularity-contest/participate boolean false
+
+# Tasksel: Install standard packages.
+# 19 - https://github.com/constrict0r/images/blob/master/iso/14-tasksel.png
+d-i tasksel/first multiselect standard
+
+# Newline.
+
+{%- if preseed_partitioning == 'true' or preseed_partitioning == 'True' or preseed_partitioning == 'yes' -%}
+
+# Newline.
+
+# Allow grub to install.
+# 20 - https://github.com/constrict0r/images/blob/master/iso/15-grub-install.png
+d-i grub-installer/only_debian boolean true
+
+# Select device where to install grub.
+# 21 - https://github.com/constrict0r/images/blob/master/iso/16-grub-device.png
+d-i grub-installer/bootdev string /dev/{{ device }}
+
+# Newline.
+
+{%- endif -%}
+
+{%- if preseed_last_question == 'true' or preseed_last_question == 'True' or preseed_last_question == 'yes' -%}
+
+# Newline.
+
+# Skip Installation Finished message.
+# 22 - https://github.com/constrict0r/images/blob/master/iso/17-end-installation.png
+d-i finish-install/reboot_in_progress note
+
+# Newline.
+
+{%- endif -%}
+
+{% set desktop_parameters = '' %}
+{%- if preseed_desktop == 'true' or preseed_desktop == 'True' or preseed_desktop == 'yes' -%}
+    {% set desktop_parameters = '-d' %}
+{%- endif -%}
+
+{% set custom_parameters = '' %}
+{%- if preseed_custom is defined and preseed_custom|length -%}
+    {% set custom_parameters = '-c /usr/local/sbin/custom-config.yml' %}
+{%- endif -%}
+
+# Newline.
+
+# Post install script.
+# Execute kick.sh to setup the system.
+d-i preseed/late_command string \
+wget https://raw.githubusercontent.com/constrict0r/kick/master/kick.sh -O /target/usr/local/sbin/kick.sh; \
+chmod +x /target/usr/local/sbin/kick.sh; \
+cp /custom-config.yml /target/usr/local/sbin/custom-config.yml &>/dev/null; \
+sed -i '/^\ *deb\ cdrom/s/^\(.*\)$/#\1/' /target/etc/apt/sources.list; \
+mkdir /dev/shm; \
+mount --bind /dev/pts /target/dev/pts; \
+mount --bind /dev/shm /target/dev/shm; \
+chroot /target mount -t proc proc /proc; \
+chroot mount --rbind /sys sys/; \
+chroot mount --rbind /dev dev/; \
+chroot /target /bin/bash /usr/local/sbin/kick.sh -u {{ username }} {{ desktop_parameters }} {{ custom_parameters }}

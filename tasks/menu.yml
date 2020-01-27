@@ -1,0 +1,54 @@
+---
+# Tasks to modify the autoinstall menu.
+
+- name: Handle autoinstall menu.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Modifying autoinstall menu ...'
+      - '____________________________________________________________________'
+
+- name: Remove 'Graphical Install' option from autoinstall menu.
+  file:
+    path: "{{ remaster_mount_ }}/isolinux/gtk.cfg"
+    state: absent
+  become: true
+  changed_when: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Check if 'Graphical Install' option was removed.
+  stat:
+    path: "{{ remaster_mount_ }}/isolinux/gtk.cfg"
+  register: graphical_install_option
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Add empty 'Graphical Install' configuration.
+  shell: echo '' > "{{ remaster_mount_ }}/isolinux/gtk.cfg"
+  become: true
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - not graphical_install_option.stat.exists
+
+- name: Set autostart timeout to one second.
+  replace:
+    path: "{{ remaster_mount_ }}/isolinux/isolinux.cfg"
+    regexp: 'timeout 0'
+    replace: 'timeout 1'
+  become: true
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: unitTest - Setted autostart timeout to one second.
+  lineinfile:
+    path: "{{ remaster_mount_ }}/isolinux/isolinux.cfg"
+    line: 'timeout 1'
+    state: present
+  changed_when: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+  tags:
+    - test

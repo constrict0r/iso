@@ -1,0 +1,42 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Copy preseed.cfg;
+
+:Preseed locale;
+
+:Preseed keyboard;
+
+if (preseed network?) then (yes)
+  :Set autoselect interface on;
+  :Set networkname;
+  :Set networkpass;
+else (no)
+endif
+
+:Preseed hostname;
+
+:Preseed rootpass;
+
+:Preseed username;
+
+:Preseed userpass;
+
+:Preseed mirror;
+
+if (partition type != none) then (yes)
+else (no)
+  :Preseed partitioning;
+endif
+
+if (preseed last question?) then (yes)
+  :Preseed last question;
+else (no)
+endif
+
+end
+@enduml

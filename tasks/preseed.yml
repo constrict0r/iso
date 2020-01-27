@@ -1,0 +1,17 @@
+---
+# Tasks for preseeding.
+
+- name: Handle preseeding.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Preseeding ISO ...'
+      - '____________________________________________________________________'
+
+- import_tasks: menu.yml
+  tags:
+    - menu
+
+- import_tasks: initrd.yml
+  tags:
+    - initrd

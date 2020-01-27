@@ -1,0 +1,4 @@
+ansible
+Jinja2
+PyYAML
+requests

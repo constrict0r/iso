@@ -1,0 +1,46 @@
+---
+- name: Display Role Details.
+  debug:
+    msg:
+      - '===================================================================='
+      - 'constrict0r.iso'
+      - 'Creates a preseeded Debian iso installer.'
+      - '===================================================================='
+
+- name: Gather facts.
+  setup:
+  delegate_to: localhost
+
+- import_tasks: variables.yml
+  tags:
+    - cleanup
+    - initrd
+    - menu
+    - preseed
+    - remaster
+    - sync
+
+- import_tasks: sync/main.yml
+  tags:
+    - initrd
+    - menu
+    - preseed
+    - remaster
+    - sync
+
+- import_tasks: preseed.yml
+  when: preseed | bool
+  tags:
+    - preseed
+
+- import_tasks: remaster.yml
+  tags:
+    - remaster
+
+- import_tasks: cleanup.yml
+  tags:
+    - cleanup
+    - initrd
+    - menu
+    - remaster
+    - sync

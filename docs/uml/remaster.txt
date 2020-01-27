@@ -1,0 +1,21 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Add extra firmware;
+
+:Fix md5;
+
+:Install isolinux if required;
+
+:Install xorriso if required;
+
+:Remove old remaster.iso;
+
+:Create new remaster.iso;
+
+end
+@end

@@ -1,0 +1,97 @@
+---
+# Obtain iso tasks.
+
+- name: Obtain ISO file.
+  debug:
+    msg:
+      - '____________________________________________________________________'
+      - 'Obtaining ISO ...'
+      - '____________________________________________________________________'
+
+- name: Set path to iso file.
+  set_fact:
+    iso_path_: "{{ iso_url }}"
+  when: iso_path_ is variable_empty
+
+- name: Define iso_is_file variable.
+  set_fact:
+    iso_is_file: false
+
+- name: Check if iso_path is a file.
+  set_fact:
+    iso_is_file: true
+  when: iso_path_ is search('\.iso')
+
+- name: If iso_path is a file, ensure it has file:///.
+  set_fact:
+    iso_path_: "file://{{ iso_path_ }}"
+  when: iso_is_file and not iso_path_ is search('file:/')
+
+- name: Obtain MD5SUMS if required.
+  get_url:
+    url: "{{ iso_path_ }}/MD5SUMS"
+    dest: /tmp/MD5SUMS
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - not iso_is_file
+
+- name: unitTest - Obtained MD5SUMS if required.
+  file:
+    path: /tmp/MD5SUMS
+    state: file
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - iso_is_file is defined and not iso_is_file
+
+- name: Obtain iso name from MD5SUMS.
+  shell: set -o pipefail && (cat /tmp/MD5SUMS | awk 'NR==1{print $2}')
+  args:
+    executable: /bin/bash
+  register: iso_name
+  changed_when: false
+  delegate_to: localhost
+  when:
+    - not ansible_check_mode
+    - not iso_is_file
+  failed_when:
+    - iso_name is not defined
+    - iso_name is variable_empty
+
+- name: Update iso_path to include iso name.
+  set_fact:
+    iso_path_: "{{ iso_path_ }}/{{ iso_name.stdout }}"
+  when:
+    - not ansible_check_mode
+    - not iso_is_file
+
+- name: Obtain Debian iso.
+  get_url:
+    url: "{{ iso_path_ }}"
+    dest: "{{ iso_destination }}"
+    force: false
+  delegate_to: localhost
+  when: not ansible_check_mode
+
+- name: Update iso_path to include destination path only.
+  set_fact:
+    iso_path_: "{{ iso_destination }}/{{ iso_path_ | basename }}"
+
+- name: Obtains iso_path full system path.
+  command: "echo {{ iso_path_ | realpath }}"
+  register: iso_path_full
+  changed_when: false
+
+- name: Update iso_path to full system path.
+  set_fact:
+    iso_path_: "{{ iso_path_full.stdout }}"
+
+- name: unitTest - Obtained Debian iso.
+  stat:
+    path: "{{ iso_path_ }}"
+  delegate_to: localhost
+  when: not ansible_check_mode
+  tags:
+    - test

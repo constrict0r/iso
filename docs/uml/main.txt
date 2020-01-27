@@ -1,0 +1,21 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Make original variables copies;
+
+:Synchronize isos;
+
+if (preseed == yes) then (yes)
+  :Preseed iso;
+else (no)
+endif
+
+:Remaster iso;
+
+:Cleanup;
+end
+@enduml

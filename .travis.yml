@@ -1,0 +1,29 @@
+---
+language: python
+
+python:
+  - '3.7'
+
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+
+before_install:
+  - sudo apt purge ansible
+  - sudo apt update
+
+install:
+  - sudo apt install -y python3-pip python3-setuptools
+  - sudo python3 -m pip install --upgrade pip setuptools wheel
+  - sudo python3 -m pip install ansible molecule[docker]
+  - ansible-galaxy install constrict0r.iso
+
+before_script:
+  - chmod +x testme.sh
+
+script:
+  - sudo ./testme.sh -i -t -x python3
+
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/

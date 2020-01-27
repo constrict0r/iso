@@ -1,0 +1,75 @@
+# Ansible.
+*.retry
+.galaxy_install_info
+
+# Binaries.
+*.jpg
+
+# Buffers.
+*~
+
+# C extensions.
+*.so
+
+# Coverage.
+cover
+.coverage
+.coveralls.yml
+htmlcov
+
+# Editors.
+.#.*
+#.*#
+
+# Emacs.
+dconf/
+#*
+~*
+*/#*
+*flymake.py
+
+# Jupyter.
+.ipynb_checkpoints
+.ipython
+.jupyter
+.local
+
+# Org Mode.
+*~
+index.org
+public/
+
+# Python.
+build/
+develop-eggs
+dist/
+*.egg
+*.egg-info
+eggs
+.installed.cfg
+bin
+lib
+lib64
+var
+sdist
+pip-log.txt
+*.pyc
+*.py[cod]
+__pycache__
+.pytest_cache
+.tox
+
+# Sphinx.
+build
+docs/source/build
+
+# Tests generated files.
+tests/library
+tests/test_plugins
+.yamllint
+
+# Temporary.
+.cache
+
+# Translations.
+.mo

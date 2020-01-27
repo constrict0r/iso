@@ -1,0 +1,14 @@
+@startuml
+'Use plantuml to view this file as an image: http://plantuml.com'
+
+skinparam monochrome true
+
+start
+
+:Modify autoinstall menu;
+
+:Modify initrd.gz;
+
+end
+
+@enduml
