@@ -2,9 +2,6 @@
 iso
 ***
 
-.. image:: https://gitlab.com/constrict0r/iso/badges/master/pipeline.svg
-   :alt: pipeline
-
 .. image:: https://travis-ci.com/constrict0r/iso.svg
    :alt: travis
 
@@ -1049,8 +1046,6 @@ Links
 * `Github <https://github.com/constrict0r/iso>`_.
 
 * `Gitlab <https://gitlab.com/constrict0r/iso>`_.
-
-* `Gitlab CI <https://gitlab.com/constrict0r/iso/pipelines>`_.
 
 * `Readthedocs <https://iso.readthedocs.io>`_.
 

@@ -1,8 +1,6 @@
 |PROJECT|
 ==============================================================================
 
-|GITLAB_BADGE|
-
 |TRAVIS_BADGE|
 
 |READTHEDOCS_BADGE|
@@ -50,4 +48,3 @@ Contents
    recommends
 
    author
-
