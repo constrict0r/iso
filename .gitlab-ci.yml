@@ -3,7 +3,7 @@ stages:
   - test
 
 bare:
-  image: debian:latest
+  image: ubuntu:xenial
   stage: test
   before_script:
     - apt update
