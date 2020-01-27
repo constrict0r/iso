@@ -7,24 +7,10 @@ bare:
   stage: test
   before_script:
     - apt update
-    - apt install -y python3-pip python3-setuptools
+    - apt install -y python3-pip python3-setuptools sudo
     - python3 -m pip install --upgrade pip setuptools wheel
     - python3 -m pip install ansible
     - ansible-galaxy install constrict0r.iso
     - chmod +x testme.sh
   script:
-    - ./testme.sh -i -o a -t -x python3
-
-molecule:
-  image: docker:git
-  stage: test
-  services:
-    - docker:dind
-  before_script:
-    - apk update && apk add --no-cache docker
-      python3-dev py3-pip docker gcc git curl build-base
-      autoconf automake py3-cryptography linux-headers
-      musl-dev libffi-dev openssl-dev openssh
-    - pip3 install ansible molecule[docker]
-  script:
-    - molecule test
+    - sudo ./testme.sh -i -o a -t -x python3
