@@ -168,6 +168,6 @@ mkdir /dev/shm; \
 mount --bind /dev/pts /target/dev/pts; \
 mount --bind /dev/shm /target/dev/shm; \
 chroot /target mount -t proc proc /proc; \
-chroot mount --rbind /sys sys/; \
-chroot mount --rbind /dev dev/; \
+chroot /target mount --rbind /sys sys/; \
+chroot /target mount --rbind /dev dev/; \
 chroot /target /bin/bash /usr/local/sbin/kick.sh -u {{ username }} {{ desktop_parameters }} {{ custom_parameters }}
