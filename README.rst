@@ -595,7 +595,7 @@ Wheter to apply desktop configuration to the new system or not.
 
 If set to *true* the `gnome <https://www.gnome.org>`_ desktop
 enviroment is installed by including the `constrictor.desktop
-<https://github.com/constrict0r/desktop>`_ ansible role.
+<https://gitlab.com/constrict0r/desktop>`_ ansible role.
 
 When the **preseed_custom** variable is present and not empty, this
 variable is ignored.
