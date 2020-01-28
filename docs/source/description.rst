@@ -9,3 +9,6 @@ installer during the installation process will be automatically answered and
 when the installation
 process ends, the `kick.sh <https://github.com/constrict0r/kick>`_ script will
 be runned to setup the newly installed system.
+
+When using preseeding and on the first screen that the Debian Installer shows,
+you will have to wait a couple of seconds (about 5) for the process to autostart.

@@ -102,6 +102,10 @@ answered and when the installation process ends, the `kick.sh
 <https://github.com/constrict0r/kick>`_ script will be runned to setup
 the newly installed system.
 
+When using preseeding and on the first screen that the Debian
+Installer shows, you will have to wait a couple of seconds (about 5)
+for the process to autostart.
+
 
 Usage
 *****
@@ -165,6 +169,56 @@ To run tests:
    ./testme.sh
 
 On some tests you may need to use *sudo* to succeed.
+
+* To use with `Virt Manager <https://virt-manager.org>`_:
+
+Use this role to generate a *remaster.iso* image (replace with your
+data):
+
+::
+
+   ansible localhost -m include_role -a name=constrict0r.iso -K -e \
+       'username=constrict0r userpass=1234 rootpass=1234 device=sda preseed=true \
+       preseed_wireless=true preseed_partitioning=true preseed_last_question=true \
+       preseed_custom=/home/constrict0r/Documentos/madvillain.yml networkname="MY NETWORK" \
+       networkpass="my-network-pass" hostname="latveria" domain="amanita"'
+
+Open Virt Manager and click on the *New Virtual Machine* icon (the
+tiny computer):
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/00_open.png
+   :alt: 00_open
+
+On the *new Virtual Machine* screen choose the option *Local media*
+and press *Next*:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/01_new.png
+   :alt: 01_new
+
+On the *Create Virtual Machine* screen, search for the *remaster.iso*
+file and on the bottom input select the *Generic* OS type, then press
+the *Next* button:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/02_remaster.png
+   :alt: 02_remaster
+
+On the *Memory Assign” screen type the amount of memory you need and
+the amount of cpus that you want to use and press *Next*:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/03_memory.png
+   :alt: 03_memory
+
+On the *Disk Space” screen type the amount of space that you want to
+use and press *Next*:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/03_disk.png
+   :alt: 03_disk
+
+On the *Final” screen put a name to your Virtual Machine, choose the
+network you want to use and press *Finish*:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/03_disk.png
+   :alt: 03_disk
 
 
 Variables
