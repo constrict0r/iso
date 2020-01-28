@@ -5,6 +5,23 @@ If set to *false* the grub installation step is not preseeded neither.
 If this variable is set to *true* the Debian Installer Variables
 (listed below) are used to apply preseeding.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_11_another_dvd.png
+   :alt: di_11_another_dvd
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_13_popularity_contest.png
+   :alt: di_13_popularity_contest
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_14_tasksel.png
+   :alt: di_14_tasksel
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_15_grub_install.png
+   :alt: di_15_grub_install
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_19_network_interface.png
+   :alt: di_19_network_interface
+
 Defaults to *false*.
 
 .. substitution-code-block:: bash

@@ -1,5 +1,10 @@
 Language and country to use.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_00_language.png
+   :alt: di_00_language
+
 Defaults to *es_CR*.
 
 .. substitution-code-block:: bash

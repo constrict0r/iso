@@ -1,5 +1,10 @@
 Hostname to use.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_02_hostname.png
+   :alt: di_02_hostname
+
 Defaults to *debian*.
 
 .. substitution-code-block:: bash

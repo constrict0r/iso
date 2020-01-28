@@ -1,5 +1,10 @@
 Debian mirror url added to `sources <https://wiki.debian.org/SourcesList>`_.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_12_mirror.png
+   :alt: di_12_mirror
+
 Defaults to *`https://mirrors.ucr.ac.cr <https://mirrors.ucr.ac.cr>`_*.
 
 .. substitution-code-block:: bash

@@ -3,6 +3,11 @@ Wheter to preseed or not the last question.
 This is useful to prevent multiple installations if the machine keeps booting
 from an usb drive or similar.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_17_end_installation.png
+   :alt: di_17_end_installation
+
 Defaults to *false*.
 
 .. substitution-code-block:: bash

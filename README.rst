@@ -160,15 +160,17 @@ Usage
         vars:
           username: [mary]
 
-To run tests:
+* To run tests:
 
-::
+..
 
-   cd iso
-   chmod +x testme.sh
-   ./testme.sh
+   ::
 
-On some tests you may need to use *sudo* to succeed.
+      cd iso
+      chmod +x testme.sh
+      ./testme.sh
+
+   On some tests you may need to use *sudo* to succeed.
 
 * To use with `Virt Manager <https://virt-manager.org>`_:
 
@@ -483,6 +485,11 @@ to the resulting ISO file.
 
 This files must have *.deb* extension.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_18_add_firmware.png
+   :alt: di_18_add_firmware
+
 This variable is empty by default.
 
 ::
@@ -511,6 +518,15 @@ If set to *false* the grub installation step is not preseeded neither.
 
 If this variable is set to *true* the Debian Installer Variables
 (listed below) are used to apply preseeding.
+
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_11_another_dvd.png
+   :alt: di_11_another_dvd[image:
+di_13_popularity_contest][image].. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_14_tasksel.png
+   :alt: di_14_tasksel[image:
+di_15_grub_install][image].. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_19_network_interface.png
+   :alt: di_19_network_interface
 
 Defaults to *false*.
 
@@ -568,6 +584,15 @@ device specified in the **device** variable.
 
 On simple terms this variable allows to apply a *whole* disk
 partitioning or not (*none*) partitioning at all.
+
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_07_partitioning_guided_manual_whole.png
+   :alt: di_07_partitioning_guided_manual_whole[image:
+di_08_partitioning_whole][image][image:
+di_23_partitioning_biggest_free][image][image:
+di_09_partitioning_end_partitioning][image][image:
+di_10_partitioning_write_changes][image]
 
 Defaults to *false*.
 
@@ -695,6 +720,11 @@ Wheter to preseed or not the last question.
 This is useful to prevent multiple installations if the machine keeps
 booting from an usb drive or similar.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_17_end_installation.png
+   :alt: di_17_end_installation
+
 Defaults to *false*.
 
 ::
@@ -723,6 +753,11 @@ locale
 
 Language and country to use.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_00_language.png
+   :alt: di_00_language
+
 Defaults to *es_CR*.
 
 ::
@@ -747,6 +782,11 @@ keyboard
 
 Keyboard distribution to use.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_01_keyboard.png
+   :alt: di_01_keyboard
+
 Defaults to *latam*.
 
 ::
@@ -770,6 +810,11 @@ networkname
 ===========
 
 Network name to use.
+
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_20_wireless_name.png
+   :alt: di_20_wireless_name
 
 Defaults to *mynetwork*.
 
@@ -798,6 +843,12 @@ networkpass
 
 Network password to use.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_21_wireless_pass_type.png
+   :alt: di_21_wireless_pass_type[image:
+di_22_wireless_pass][image]
+
 Defaults to *12345678*.
 
 Must use quotes (*“* or *‘*) when specifying this variable via
@@ -825,6 +876,11 @@ hostname
 
 Hostname to use.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_02_hostname.png
+   :alt: di_02_hostname
+
 Defaults to *debian*.
 
 ::
@@ -849,6 +905,11 @@ domain
 
 Domain name to use.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_03_domain.png
+   :alt: di_03_domain
+
 Defaults to *debian*.
 
 ::
@@ -872,6 +933,11 @@ rootpass
 ========
 
 Root user password.
+
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_03_root.png
+   :alt: di_03_root
 
 Defaults to *debian*.
 
@@ -900,6 +966,11 @@ username
 
 Non-root username.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_02_username.png
+   :alt: di_02_username
+
 Defaults to *debian*.
 
 ::
@@ -923,6 +994,11 @@ userpass
 ========
 
 Non-root user password.
+
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_06_pass.png
+   :alt: di_06_pass
 
 Defaults to *debian*.
 
@@ -952,6 +1028,11 @@ mirror
 Debian mirror url added to `sources
 <https://wiki.debian.org/SourcesList>`_.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_12_mirror.png
+   :alt: di_12_mirror
+
 Defaults to *`https://mirrors.ucr.ac.cr
 <https://mirrors.ucr.ac.cr>`_*.
 
@@ -980,6 +1061,11 @@ Device used for partitioning and where to install `grub
 
 This variable must not include the text */dev/* but only the device
 name.
+
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_16_grub_device.png
+   :alt: di_16_grub_device
 
 Defaults to *sda*.
 

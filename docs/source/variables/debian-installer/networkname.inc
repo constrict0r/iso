@@ -1,5 +1,10 @@
 Network name to use.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_20_wireless_name.png
+   :alt: di_20_wireless_name
+
 Defaults to *mynetwork*.
 
 Must use quotes (*"* or *'*) when specifying this variable via *--extra-vars*

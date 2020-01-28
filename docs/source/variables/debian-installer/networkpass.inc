@@ -1,5 +1,13 @@
 Network password to use.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_21_wireless_pass_type.png
+   :alt: di_21_wireless_pass_type
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_22_wireless_pass.png
+   :alt: di_22_wireless_pass
+
 Defaults to *12345678*.
 
 Must use quotes (*"* or *'*) when specifying this variable via *--extra-vars*

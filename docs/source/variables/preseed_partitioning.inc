@@ -6,6 +6,23 @@ specified in the **device** variable.
 On simple terms this variable allows to apply a *whole* disk partitioning or
 not (*none*) partitioning at all.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_07_partitioning_guided_manual_whole.png
+   :alt: di_07_partitioning_guided_manual_whole
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_08_partitioning_whole.png
+   :alt: di_08_partitioning_whole
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_23_partitioning_biggest_free.png
+   :alt: di_23_partitioning_biggest_free
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_09_partitioning_end_partitioning.png
+   :alt: di_09_partitioning_end_partitioning
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_10_partitioning_write_changes.png
+   :alt: di_10_partitioning_write_changes
+
 Defaults to *false*.
 
 .. substitution-code-block:: bash

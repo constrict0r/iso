@@ -1,5 +1,10 @@
 Non-root user password.
 
+This variable answer to the following step of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_06_pass.png
+   :alt: di_06_pass
+
 Defaults to *debian*.
 
 Must use quotes (*"* or *'*) when specifying this variable via *--extra-vars*

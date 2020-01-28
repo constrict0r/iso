@@ -3,6 +3,11 @@ resulting ISO file.
 
 This files must have *.deb* extension.
 
+This variable answer to the following steps of the Debian Installer:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_18_add_firmware.png
+   :alt: di_18_add_firmware
+
 This variable is empty by default.
 
 .. substitution-code-block:: bash
