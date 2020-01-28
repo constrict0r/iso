@@ -160,7 +160,7 @@ d-i finish-install/reboot_in_progress note
 # Post install script.
 # Execute kick.sh to setup the system.
 d-i preseed/late_command string \
-wget https://gitlab.com/constrict0r/kick/blob/master/kick.sh -O /target/usr/local/sbin/kick.sh; \
+wget https://gitlab.com/constrict0r/kick/raw/master/kick.sh -O /target/usr/local/sbin/kick.sh; \
 chmod +x /target/usr/local/sbin/kick.sh; \
 cp /custom-config.yml /target/usr/local/sbin/custom-config.yml &>/dev/null; \
 sed -i '/^\ *deb\ cdrom/s/^\(.*\)$/#\1/' /target/etc/apt/sources.list; \
