@@ -3,7 +3,7 @@ Device used for partitioning and where to install
 
 This variable must not include the text */dev/* but only the device name.
 
-This variable answer to the following steps of the Debian Installer:
+This variable answer to the following step of the Debian Installer:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_16_grub_device.png
    :alt: di_16_grub_device

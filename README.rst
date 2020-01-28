@@ -204,19 +204,19 @@ the *Next* button:
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_02_remaster.png
    :alt: vm_02_remaster
 
-On the *Memory Assign” screen type the amount of memory you need and
+On the *Memory Assign* screen type the amount of memory you need and
 the amount of cpus that you want to use and press *Next*:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_03_memory.png
    :alt: vm_03_memory
 
-On the *Disk Space” screen type the amount of space that you want to
+On the *Disk Space* screen type the amount of space that you want to
 use and press *Next*:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_04_disk.png
    :alt: vm_04_disk
 
-On the *Final” screen put a name to your Virtual Machine, choose the
+On the *Final* screen put a name to your Virtual Machine, choose the
 network you want to use and press *Finish*:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_05_final.png
@@ -519,13 +519,29 @@ If set to *false* the grub installation step is not preseeded neither.
 If this variable is set to *true* the Debian Installer Variables
 (listed below) are used to apply preseeding.
 
-This variable answer to the following steps of the Debian Installer:
+This variable answer to the following step of the Debian Installer:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_11_another_dvd.png
-   :alt: di_11_another_dvd[image:
-di_13_popularity_contest][image].. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_14_tasksel.png
-   :alt: di_14_tasksel[image:
-di_15_grub_install][image].. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_19_network_interface.png
+   :alt: di_11_another_dvd
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_13_popularity_contest.png
+   :alt: di_13_popularity_contest
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_14_tasksel.png
+   :alt: di_14_tasksel
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_15_grub_install.png
+   :alt: di_15_grub_install
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_19_network_interface.png
    :alt: di_19_network_interface
 
 Defaults to *false*.
@@ -585,14 +601,30 @@ device specified in the **device** variable.
 On simple terms this variable allows to apply a *whole* disk
 partitioning or not (*none*) partitioning at all.
 
-This variable answer to the following steps of the Debian Installer:
+This variable answer to the following step of the Debian Installer:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_07_partitioning_guided_manual_whole.png
-   :alt: di_07_partitioning_guided_manual_whole[image:
-di_08_partitioning_whole][image][image:
-di_23_partitioning_biggest_free][image][image:
-di_09_partitioning_end_partitioning][image][image:
-di_10_partitioning_write_changes][image]
+   :alt: di_07_partitioning_guided_manual_whole
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_08_partitioning_whole.png
+   :alt: di_08_partitioning_whole
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_23_partitioning_biggest_free.png
+   :alt: di_23_partitioning_biggest_free
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_09_partitioning_end_partitioning.png
+   :alt: di_09_partitioning_end_partitioning
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_10_partitioning_write_changes.png
+   :alt: di_10_partitioning_write_changes
 
 Defaults to *false*.
 
@@ -846,8 +878,12 @@ Network password to use.
 This variable answer to the following steps of the Debian Installer:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_21_wireless_pass_type.png
-   :alt: di_21_wireless_pass_type[image:
-di_22_wireless_pass][image]
+   :alt: di_21_wireless_pass_type
+
+And:
+
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_22_wireless_pass.png
+   :alt: di_22_wireless_pass
 
 Defaults to *12345678*.
 
@@ -1062,7 +1098,7 @@ Device used for partitioning and where to install `grub
 This variable must not include the text */dev/* but only the device
 name.
 
-This variable answer to the following steps of the Debian Installer:
+This variable answer to the following step of the Debian Installer:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_16_grub_device.png
    :alt: di_16_grub_device

@@ -5,6 +5,8 @@ This variable answer to the following steps of the Debian Installer:
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_21_wireless_pass_type.png
    :alt: di_21_wireless_pass_type
 
+And:
+
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_22_wireless_pass.png
    :alt: di_22_wireless_pass
 

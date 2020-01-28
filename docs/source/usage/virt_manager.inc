@@ -25,17 +25,17 @@ On the *Create Virtual Machine* screen, search for the *remaster.iso* file and o
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_02_remaster.png
    :alt: vm_02_remaster
 
-On the *Memory Assign" screen type the amount of memory you need and the amount of cpus that you want to use and press *Next*:
+On the *Memory Assign* screen type the amount of memory you need and the amount of cpus that you want to use and press *Next*:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_03_memory.png
    :alt: vm_03_memory
 
-On the *Disk Space" screen type the amount of space that you want to use and press *Next*:
+On the *Disk Space* screen type the amount of space that you want to use and press *Next*:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_04_disk.png
    :alt: vm_04_disk
 
-On the *Final" screen put a name to your Virtual Machine, choose the network you want to use and press *Finish*:
+On the *Final* screen put a name to your Virtual Machine, choose the network you want to use and press *Finish*:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_05_final.png
    :alt: vm_05_final
