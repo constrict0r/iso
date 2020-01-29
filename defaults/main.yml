@@ -40,12 +40,12 @@ preseed_wireless: false
 preseed_partitioning: false
 
 # Wheter to apply desktop configuration on the new installation or not (see
-# https://github.com/constrict0r/desktop).
+# https://gitlab.com/constrict0r/desktop).
 preseed_desktop: false
 
 # Absolute file path to apply custom configuration from a file on the new
-# installation or not (see https://github.com/constrict0r/constructor).
-preseed_custom:
+# installation or not (see https://gitlab.com/constrict0r/constructor).
+preseed_custom: ''
 
 # Wheter to preseed or not the last question, this to prevent
 # multiple installations if the machine keeps booting from usb drive.

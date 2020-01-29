@@ -38,7 +38,7 @@ apply the configuration described on it.
 When this variable is present and not empty, the **preseed_desktop** variable
 is ignored (as if its value is *false*).
 
-Defaults to *false*.
+Defaults to *empty*.
 
 .. substitution-code-block:: bash
 
