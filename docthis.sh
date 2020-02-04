@@ -190,13 +190,13 @@ VARIABLES_CONTENTS="Variables
 
 The following variables are supported:
 
-\- *-h* (help): Show help message and exit.
+- *-h* (help): Show help message and exit.
 
  .. substitution-code-block:: bash
 
   ./|PROJECT|.sh -h
 
-\- *-p* (path): Optional path to project root folder.
+- *-p* (path): Optional path to project root folder.
 
  .. substitution-code-block:: bash
 
@@ -206,17 +206,17 @@ The following variables are supported:
 REQUIREMENTS_CONTENTS='Requirements
 -----------------------------------------------------------------------------
 
-\- Python 3.'
+- Python 3.'
 
 # compatibility.rst file contents.
 COMPATIBILITY_CONTENTS='Compatibility
 -----------------------------------------------------------------------------
 
-\- Debian buster.
+- Debian buster.
 
-\- Raspbian buster.
+- Raspbian buster.
 
-\- Ubuntu xenial.'
+- Ubuntu xenial.'
 
 # license.rst file contents.
 LICENSE_CONTENTS='License
@@ -313,7 +313,7 @@ function generate() {
                     
         # Create .readthedocs.yml configuration file.
         if ! [[ -f $project_path/.readthedocs.yml ]]; then
-            printf "$READTHEDOCS_CONTENTS" > $project_path/.readthedocs.yml
+            printf '%s' "$READTHEDOCS_CONTENTS" > $project_path/.readthedocs.yml
         fi
 
         # Copy docthis.sh if not exists.
@@ -338,9 +338,9 @@ function generate() {
             printf "$INDEX_CONTENTS" > $project_path/docs/source/index.rst
             printf "$DESCRIPTION_CONTENTS" > $project_path/docs/source/description.rst
             printf "$USAGE_CONTENTS" > $project_path/docs/source/usage.rst
-            printf "$VARIABLES_CONTENTS" > $project_path/docs/source/variables.rst
-            printf "$REQUIREMENTS_CONTENTS" > $project_path/docs/source/requirements.rst
-            printf "$COMPATIBILITY_CONTENTS" > $project_path/docs/source/compatibility.rst
+            printf '%s' "$VARIABLES_CONTENTS" > $project_path/docs/source/variables.rst
+            printf '%s' "$REQUIREMENTS_CONTENTS" > $project_path/docs/source/requirements.rst
+            printf '%s' "$COMPATIBILITY_CONTENTS" > $project_path/docs/source/compatibility.rst
             printf "$LICENSE_CONTENTS" > $project_path/docs/source/license.rst
             printf "$LINKS_CONTENTS" > $project_path/docs/source/links.rst
             printf "$AUTHOR_CONTENTS" > $project_path/docs/source/author.rst
