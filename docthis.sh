@@ -228,13 +228,13 @@ MIT. See the LICENSE file for more details.'
 LINKS_CONTENTS='Links
 -----------------------------------------------------------------------------
 
-|GITHUB_LINK|
+- |GITHUB_LINK|
 
-|GITLAB_LINK|
+- |GITLAB_LINK|
 
-|GITLAB_CI_LINK|
+- |GITLAB_CI_LINK|
 
-|TRAVIS_LINK|'
+- |TRAVIS_LINK|'
 
 # author.rst file contents.
 AUTHOR_CONTENTS='Author
@@ -342,7 +342,7 @@ function generate() {
             printf '%s' "$REQUIREMENTS_CONTENTS" > $project_path/docs/source/requirements.rst
             printf '%s' "$COMPATIBILITY_CONTENTS" > $project_path/docs/source/compatibility.rst
             printf "$LICENSE_CONTENTS" > $project_path/docs/source/license.rst
-            printf "$LINKS_CONTENTS" > $project_path/docs/source/links.rst
+            printf '%s' "$LINKS_CONTENTS" > $project_path/docs/source/links.rst
             printf "$AUTHOR_CONTENTS" > $project_path/docs/source/author.rst
             sed -i -E "s/\|AUTHOR_GENERATED_NAME\|/$author/g" $project_path/docs/source/*.*
             sed -i -E "s/\|PROJECT_GENERATED_NAME\|/$project/g" $project_path/docs/source/*.*
