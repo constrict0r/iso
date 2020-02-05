@@ -4,6 +4,9 @@
 # @brief Setup requirements and run tests, from root folder run: ./testme.sh.
 
 # Default values.
+# Become root password to pass to Ansible roles.
+BECOME_PASS=''
+
 # Wheter to generate or not a coverage report.
 COVERAGE_REPORT=false
 
@@ -149,6 +152,7 @@ function error_message() {
 #  - *c* (coverage report).
 #  - *h* (help).
 #  - *i* (install requirements).
+#  - *K* (become password for Ansible roles).
 #  - *o* <types> (only tests of type).
 #  - *p* <path> (project_path).
 #  - *r* (recursive).
@@ -162,12 +166,13 @@ function error_message() {
 function get_parameters() {
 
     # Obtain parameters.
-    while getopts 'c;h;i;o:p:r;t;x:' opt; do
+    while getopts 'c;h;i;K:o:p:r;t;x:' opt; do
         OPTARG=$(sanitize "$OPTARG")
         case "$opt" in
             c) COVERAGE_REPORT=true;;
             h) help && exit 0;;
             i) REQUIREMENTS_INSTALL=true;;
+            K) BECOME_PASS="${OPTARG}";;
             o) ONLY_TYPE="${OPTARG}";;
             p) PROJECT_PATH="${OPTARG}";;
             r) RECURSIVE=true;;
@@ -193,6 +198,7 @@ function help() {
     echo '-h (help): Show this help message.'
     echo '-i (install requirements): When present all found requirements.txt
              files are installed.'
+    echo '-K (become pass): Plain text sudo password (for Ansible roles).'
     echo '-o <only type> (type string): Optional string containing any of the
              following characters: a, b, m, p. Each one indicating to only
              execute a specific type of tests, being a = ansible, b = bats,
@@ -222,10 +228,10 @@ function help() {
 #
 # @stdout Prints the created parameters string.
 function create_recursive_parameters_string() {
-
+    local become_pass_regex='-K (.*)'
     local python_exec_regex='-x (python[0-9]*)'
     local only_type_regex='-o ([abmp])+'
-    local parameters_string=''    
+    local parameters_string=''
 
     [[ "$@" == *'-c'* ]] && parameters_string+='-c '
     [[ "$@" == *'-i'* ]] && parameters_string+='-i '
@@ -235,8 +241,13 @@ function create_recursive_parameters_string() {
     fi
 
     [[ "$@" == *'-t'* ]] && parameters_string+='-t '
+
     if [[ $@ =~ $python_exec_regex ]]; then
         parameters_string+="-x ${BASH_REMATCH[1]} "
+    fi
+
+    if [[ $@ =~ $become_pass_regex ]]; then
+        parameters_string+="-K $(sanitize ${BASH_REMATCH[1]})"
     fi
 
     echo "${parameters_string}"
@@ -311,7 +322,7 @@ function main() {
 
                 # Run ansible tests.
                 if [[ -z $ONLY_TYPE ]] || [[ $ONLY_TYPE == *'a'* ]]; then
-                    tests_ansible "$PROJECT_PATH"
+                    tests_ansible "$PROJECT_PATH" "$BECOME_PASS"
                     [ $? -eq 1 ] && error_message 'ansible'
                 fi
 
@@ -359,7 +370,7 @@ function molecule_tests_exists() {
     [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
 
     # Search for molecule tests.
-    ! [[ -d $project_path/molecule ]] && echo false && return 0
+    ! [[ -d "$project_path/molecule" ]] && echo false && return 0
 
     local pip_list=$($python_exec -m pip list)
 
@@ -608,6 +619,7 @@ _\\;_\\//__________________|  |________|  |_| |_________| |_|  -------|
 # @description Execute ansible tests.
 #
 # @arg $1 string Optional project path. Default to current path.
+# @arg $2 string Optional become password.
 #
 # @exitcode 0 if successful.
 # @exitcode 1 on failure.
@@ -622,6 +634,9 @@ function tests_ansible() {
     [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
 
     ! [[ -d $project_path/tests ]] && return 0
+
+    local become_parameter=''
+    ! [[ -z $2 ]] && become_parameter="ansible_become_pass: '$2', "
 
     if [[ $(ansible_tests_exists "$PROJECT_PATH") == true ]]; then
         [[ $(validate 'ansible') == false ]] && return 1
@@ -643,8 +658,11 @@ function tests_ansible() {
             echo 'localhost' > $project_path/tests/inventory
         fi
 
-        ansible-playbook -i $project_path/tests/inventory $playbook \
-            -e "ansible_python_interpreter=/usr/bin/$python_exec"
+        ansible-playbook -i $project_path/tests/inventory $playbook -e \
+            "{${ansible_become_pass}ansible_python_interpreter: '/usr/bin/$python_exec'}"
+
+        # Clear history for security.
+        history -c
     done
 
     return 0

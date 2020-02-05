@@ -7,6 +7,9 @@
 # specified the current path will be used.
 PROJECT_PATH=$(pwd)
 
+# Force to install the requirements or not.
+INSTALL_REQUIREMENTS=false
+
 # requirements.txt file contents.
 REQUIREMENTS_PIP='sphinxcontrib-restbuilder
 sphinxcontrib-globalsubs
@@ -50,7 +53,7 @@ img_base_url = "https://raw.githubusercontent.com/"
 img_url = img_base_url + author + "/" + project + "/master/img/"
 
 author_img = ".. image:: " + img_url + "/author.png\\n   :alt: author"
-author_slogan = "The travelling vaudeville villain."
+author_slogan = "The Travelling Vaudeville Villain."
 
 github_base_url = "https://github.com/"
 github_url = github_base_url + author + "/" + project
@@ -71,7 +74,7 @@ travis_link = "`Travis CI <" + travis_url + ">`_."
 
 readthedocs_url = "https://" + project + ".readthedocs.io"
 readthedocs_badge = "/projects/" + project + "/badge\\n   :alt: readthedocs"
-readthedocs_link = "`readthedocs <" + readthedocs_url + ">`_."
+readthedocs_link = "`Readthedocs <" + readthedocs_url + ">`_."
 
 gh_cover_base_url = "https://coveralls.io/repos/github/"
 gh_cover_url = gh_cover_base_url + author + "/" + project + "/badge.svg"
@@ -94,7 +97,7 @@ global_substitutions = {
     "READTHEDOCS_BADGE": ".. image:: https://rtfd.io" + readthedocs_badge,
     "READTHEDOCS_LINK": readthedocs_link,
     "TRAVIS_BADGE": travis_badge,
-    "TRAVIS_LINK": travis_link,
+    "TRAVIS_LINK": travis_link
 }
 
 substitutions = [
@@ -121,7 +124,7 @@ submodules:
 
 # index.rst file contents.
 INDEX_CONTENTS="|PROJECT_GENERATED_NAME|
-=============================================================================
+============================================================================
 
 |GITLAB_BADGE|
 
@@ -144,7 +147,7 @@ Source code on:
 |GITLAB_LINK|
 
 Contents
-=============================================================================
+============================================================================
 
 .. toctree::
 
@@ -168,13 +171,13 @@ Contents
 
 # description.rst file contents.
 DESCRIPTION_CONTENTS='Description
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 Describe me.'
 
 # usage.rst file contents
 USAGE_CONTENTS="Usage
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 Download the script, give it execution permissions and execute it:
 
@@ -186,7 +189,7 @@ Download the script, give it execution permissions and execute it:
 
 # variables.rst file contents.
 VARIABLES_CONTENTS="Variables
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 The following variables are supported:
 
@@ -204,13 +207,13 @@ The following variables are supported:
 
 # requirements.rst file contents.
 REQUIREMENTS_CONTENTS='Requirements
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 - Python 3.'
 
 # compatibility.rst file contents.
 COMPATIBILITY_CONTENTS='Compatibility
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 - Debian buster.
 
@@ -226,7 +229,7 @@ MIT. See the LICENSE file for more details.'
 
 # links.rst file contents.
 LINKS_CONTENTS='Links
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 - |GITHUB_LINK|
 
@@ -238,7 +241,7 @@ LINKS_CONTENTS='Links
 
 # author.rst file contents.
 AUTHOR_CONTENTS='Author
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
 |AUTHOR_IMG|
 
@@ -272,7 +275,8 @@ function escape() {
 }
 
 # @description Setup sphinx and generate html and rst documentation,
-# generates a single README-single file that can be used on github or gitlab.
+# generates a single README-single file that can be used on github
+# or gitlab.
 #
 # @arg $1 string Optional project path. Default to current path.
 # @arg $2 string Optional CI service to use for generating a coverage badge.
@@ -349,20 +353,12 @@ function generate() {
             sed -i -E "s/\|YEAR_GENERATED_VALUE\|/$project_year/g" $project_path/docs/source/*.*
         fi
 
-        # Install requirements if not already installed.
-        local sphinx_requirements=$(python3 -m pip list --format=columns)
-        sphinx_requirements="${sphinx_requirements,,}"
-        sphinx_requirements="${sphinx_requirements//-/_}"
-        local current_line=''
+        install_requirements
 
-        while read LINE
-        do
-            current_line=$LINE
-            current_line="${current_line,,}"
-            current_line="${current_line//-/_}"
-            ! [[ $sphinx_requirements == *"$current_line"* ]] && python3 -m pip install $LINE
-        done < $project_path/docs/requirements.txt
+    elif [[ "$INSTALL_REQUIREMENTS" == 'true' ]]; then
 
+        install_requirements
+        
     fi # New project?.
 
     # Generate documentation.
@@ -374,8 +370,9 @@ function generate() {
 
 # @description Generate rst documentation using sphinx.
 #
-# This function will extract each filename to include from the index.rst file
-# and concatenate all files into a single README-single.rst file.
+# This function will extract each filename to include from the
+# index.rst file and concatenate all files into a single
+# README-single.rst file.
 #
 # This function assumes:
 #   - The project has a file structure as created by generate().
@@ -408,8 +405,7 @@ function generate_rst() {
 
     # When a line readed from the index.rst file is a menu item,
     # this variable will be setted to true.
-    # This is a flag to indicate if we found the items to
-    # include on the resulting README file when reading the source index file.
+    # This is a flag to indicate if items to include were found.
     local items_found=false
 
     # Clean files first.
@@ -619,6 +615,7 @@ function get_img_url() {
 # Accepts:
 #
 #  - *h* (help).
+#  - *i* (install requirements).
 #  - *p* <path> (project_path).
 #
 # @arg '$@' string Bash arguments.
@@ -628,10 +625,11 @@ function get_img_url() {
 function get_parameters() {
 
     # Obtain parameters.
-    while getopts 'h;p:' opt; do
+    while getopts 'h;i;p:' opt; do
         OPTARG=$(sanitize "$OPTARG")
         case "$opt" in
             h) help && exit 0;;
+            i) INSTALL_REQUIREMENTS=true;;
             p) PROJECT_PATH="${OPTARG}";;
         esac
     done
@@ -822,13 +820,45 @@ function help() {
     echo 'Uses Sphinx to generate html and rst documentation.'
     echo 'Parameters:'
     echo '-h (help): Show this help message.'
+    echo '-i (install requirements): Force install requirements.txt.'
     echo '-p <file_path> (project path): Optional absolute file path to the
-             root directory of the project to generate documentation. If this
-             parameter is not espeficied, the current path will be used.'
+             root directory of the project to generate documentation. If
+             this parameter is not espeficied, the current path will be
+             used.'
     echo 'Example:'
     echo "./docthis.sh -p /home/username/my_project"
     return 0
 
+}
+
+# @description Installs all the requirements.txt files.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
+function install_requirements() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    # Install requirements if not already installed.
+    local sphinx_requirements=$(python3 -m pip list --format=columns)
+    sphinx_requirements="${sphinx_requirements,,}"
+    sphinx_requirements="${sphinx_requirements//-/_}"
+    local current_line=''
+
+    while read LINE
+    do
+        current_line=$LINE
+        current_line="${current_line,,}"
+        current_line="${current_line//-/_}"
+        if ! [[ $sphinx_requirements == *"$current_line"* ]]; then
+            python3 -m pip install $LINE
+        fi
+    done < $project_path/docs/requirements.txt
+
+    return 0
 }
 
 # @description Generate documentation using sphinx.

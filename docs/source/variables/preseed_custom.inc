@@ -7,7 +7,7 @@ all of the following configuration:
 
 - A list of packages to install via Apt (see *constrict0r.aptitude* role).
 
-- A list of packages to install via npm (see *constrict0r.jsnode* role).
+- A list of packages to install via yarn (see *constrict0r.jsnode* role).
 
 - A list of packages to install via pip (see *constrict0r.pyp* role).
  
@@ -31,7 +31,7 @@ all of the following configuration:
   (see *constrict0r.task* role).
 
 If set to *true* the
-`constrictor.constructor <https://github.com/constrict0r/constructor>`_
+`constrictor.constructor <https://gitlab.com/constrict0r/constructor>`_
 ansible role will be included to read the specified configuration file and to
 apply the configuration described on it.
 

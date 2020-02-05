@@ -9,7 +9,7 @@
       - '____________________________________________________________________'
 
 # 18 - Set extra firmware.
-# raw.githubusercontent.com/constrict0r/images/master/iso/18-add-firmware.png
+# https://gitlab.com/constrict0r/img/-/raw/master/iso/di_18_add_firmware.png
 - name: Add firmware.
   command: cp -r {{ firmware_path }}/. {{ remaster_mount_ }}/firmware
   become: true

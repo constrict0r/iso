@@ -99,7 +99,7 @@ without `preseeding
 When using preseeding on the generated iso, the questions asked by the
 Debian installer during the installation process will be automatically
 answered and when the installation process ends, the `kick.sh
-<https://github.com/constrict0r/kick>`_ script will be runned to setup
+<https://gitlab.com/constrict0r/kick>`_ script will be runned to setup
 the newly installed system.
 
 When using preseeding and on the first screen that the Debian
@@ -690,7 +690,7 @@ configuration:
 * A list of packages to install via Apt (see *constrict0r.aptitude*
    role).
 
-* A list of packages to install via npm (see *constrict0r.jsnode*
+* A list of packages to install via yarn (see *constrict0r.jsnode*
    role).
 
 * A list of packages to install via pip (see *constrict0r.pyp* role).
@@ -718,7 +718,7 @@ configuration:
    *constrict0r.task* role).
 
 If set to *true* the `constrictor.constructor
-<https://github.com/constrict0r/constructor>`_ ansible role will be
+<https://gitlab.com/constrict0r/constructor>`_ ansible role will be
 included to read the specified configuration file and to apply the
 configuration described on it.
 
@@ -1357,7 +1357,7 @@ Author
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/author.png
    :alt: author
 
-The travelling vaudeville villain.
+The Travelling Vaudeville Villain.
 
 Enjoy!!!
 

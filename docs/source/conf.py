@@ -32,7 +32,7 @@ img_base_url = "https://gitlab.com/" + author + "/img/raw/master/"
 img_url = img_base_url + project + "/"
 
 author_img = ".. image:: " + img_url + "author.png\n   :alt: author"
-author_slogan = "The travelling vaudeville villain."
+author_slogan = "The Travelling Vaudeville Villain."
 
 github_base_url = "https://github.com/"
 github_url = github_base_url + author + "/" + project

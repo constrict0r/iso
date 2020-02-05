@@ -1,55 +1,55 @@
 # Select language and country.
-# 00 - https://github.com/constrict0r/images/blob/master/iso/00-language.png
+# 00 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_00_language.png
 d-i debian-installer/locale string {{ locale }}
 
 # Select keyboard map.
-# 01 - https://github.com/constrict0r/images/blob/master/iso/01-keyboard.png
+# 01 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_01_keyboard.png
 d-i keyboard-configuration/xkb-keymap select {{ keyboard }}
 
 # Set hostname.
-# 02 - https://github.com/constrict0r/images/blob/master/iso/02-hostname.png
+# 02 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_02_hostname.png
 d-i netcfg/get_hostname string {{ hostname }}
 
 # Set domain name.
-# 03 - https://github.com/constrict0r/images/blob/master/iso/03-domain-name.png
+# 03 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_03_domain.png
 d-i netcfg/get_domain string {{ domain }}
 
 # Set root password and confirmation.
-# 04 - https://github.com/constrict0r/images/blob/master/iso/04-root-pass.png
+# 04 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_04_root.png
 d-i passwd/root-password password {{ rootpass }}
 d-i passwd/root-password-again password {{ rootpass }}
 
 # Set user full name and username.
-# 05 - https://github.com/constrict0r/images/blob/master/iso/05-username.png
+# 05 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_05_username.png
 d-i passwd/user-fullname string {{ username }}
 d-i passwd/username string {{ username }}
 
 # Set user password.
-# 06 - https://github.com/constrict0r/images/blob/master/iso/06-user-pass.png
+# 06 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_06_pass.png
 d-i passwd/user-password password {{ userpass }}
 d-i passwd/user-password-again password {{ userpass }}
 
-# 07 - https://github.com/constrict0r/images/blob/master/iso/07-add-firmware.png
+# 07 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_18_add_firmware.png
 
 {%- if preseed_wireless == 'true' or preseed_wireless == 'True' or preseed_wireless == 'yes' -%}
 
 # Newline.
 
 # Enable auto select interface.
-# 08 - https://github.com/constrict0r/images/blob/master/iso/19-network-interface.png
+# 08 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_19_network_interface.png
 d-i netcfg/choose_interface select auto
 d-i netcfg/wireless_show_essids select manual
 
 # Set network name.
-# 09 - https://github.com/constrict0r/images/blob/master/iso/20-wireless-name.png
+# 09 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_20_wireless_name.png
 d-i netcfg/wireless_essid string {{ networkname }}
 
 # Select network security type.
-# 10 - https://github.com/constrict0r/images/blob/master/iso/21-wireless-pass-type.png
+# 10 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_21_wireless_pass_type.png
 d-i netcfg/wireless_security_type select wpa
 
 # Set network password.
-# 11 - https://github.com/constrict0r/images/blob/master/iso/21-wireless-pass.png
+# 11 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_22_wireless_pass.png
 d-i netcfg/wireless_wpa string {{ networkpass }}
 
 # Newline.
@@ -64,7 +64,7 @@ d-i netcfg/wireless_wpa string {{ networkpass }}
 d-i partman-auto/disk string /dev/{{ device }}
 
 # Use lvm partitioning.
-# 12 - https://github.com/constrict0r/images/blob/master/iso/07-partitioning-guided-manual-whole.png
+# 12 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_07_partitioning_guided_manual_whole.png
 d-i partman-auto/method string lvm
 
 # Confirm remove old partitions.
@@ -74,15 +74,15 @@ d-i partman-md/device_remove_md boolean true
 d-i partman-auto-lvm/guided_size string max
 
 # Set partitioning guided/manual - Whole disk, all files in one partition.
-# 13 - https://github.com/constrict0r/images/blob/master/iso/08-partitioning-whole.png
+# 13 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_08_partitioning_whole.png
 d-i partman-auto/choose_recipe select atomic
 
 # Confirm end partitioning.
-# 14 - https://github.com/constrict0r/images/blob/master/iso/09-partitioning-end-partitioning.png
+# 14 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_09_partitioning_end_partitioning.png
 d-i partman/choose_partition select finish
 
 # Confirm write changes.
-# 15 - https://github.com/constrict0r/images/blob/master/iso/10-partitioning-write-changes.png
+# 15 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_10_partitioning_write_changes.png
 d-i partman/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
 d-i partman/confirm_nooverwrite boolean true
@@ -97,22 +97,22 @@ d-i partman-md/confirm boolean true
 {%- endif -%}
 
 # Scan another DVD?
-# 16 - https://github.com/constrict0r/images/blob/master/iso/11-another-dvd.png
+# 16 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_11_another_dvd.png
 apt-cdrom-setup apt-setup/cdrom/set-first boolean false
 
 # Select mirror.
-# 17 - https://github.com/constrict0r/images/blob/master/iso/12-mirror.png
+# 17 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_12_mirror.png
 d-i mirror/country string manual
 d-i mirror/http/hostname string {{ mirror }}
 d-i mirror/http/directory string /debian
 d-i mirror/http/proxy string
 
 # Set popularity-contest to false.
-# 18 - https://github.com/constrict0r/images/blob/master/iso/13-popularity-contest.png
+# 18 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_13_popularity_contest.png
 popularity-contest popularity-contest/participate boolean false
 
 # Tasksel: Install standard packages.
-# 19 - https://github.com/constrict0r/images/blob/master/iso/14-tasksel.png
+# 19 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_14_tasksel.png
 d-i tasksel/first multiselect standard
 
 # Newline.
@@ -122,11 +122,11 @@ d-i tasksel/first multiselect standard
 # Newline.
 
 # Allow grub to install.
-# 20 - https://github.com/constrict0r/images/blob/master/iso/15-grub-install.png
+# 20 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_15_grub_install.png
 d-i grub-installer/only_debian boolean true
 
 # Select device where to install grub.
-# 21 - https://github.com/constrict0r/images/blob/master/iso/16-grub-device.png
+# 21 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_16_grub_device.png
 d-i grub-installer/bootdev string /dev/{{ device }}
 
 # Newline.
@@ -138,7 +138,7 @@ d-i grub-installer/bootdev string /dev/{{ device }}
 # Newline.
 
 # Skip Installation Finished message.
-# 22 - https://github.com/constrict0r/images/blob/master/iso/17-end-installation.png
+# 22 - https://gitlab.com/constrict0r/img/-/raw/master/iso/di_17_end_installation.png
 d-i finish-install/reboot_in_progress note
 
 # Newline.
