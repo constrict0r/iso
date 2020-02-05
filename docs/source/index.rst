@@ -45,6 +45,4 @@ Contents
 
    uml
 
-   recommends
-
    author
