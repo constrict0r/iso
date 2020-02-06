@@ -846,8 +846,13 @@ function install_requirements() {
     local sphinx_requirements=$(python3 -m pip list --format=columns)
     sphinx_requirements="${sphinx_requirements,,}"
     sphinx_requirements="${sphinx_requirements//-/_}"
-    local current_line=''
 
+    # Add a new line to requirements.txt to ensure visit all lines.
+    if [[ -f $project_path/docs/requirements.txt ]]; then
+        echo '' >> $project_path/docs/requirements.txt
+    fi
+
+    local current_line=''
     while read LINE
     do
         current_line=$LINE
@@ -857,6 +862,12 @@ function install_requirements() {
             python3 -m pip install $LINE
         fi
     done < $project_path/docs/requirements.txt
+
+    # Remove added new line.
+    if [[ -f $project_path/docs/requirements.txt ]]; then
+        head -n -1 $project_path/docs/requirements.txt > $project_path/docs/tmp.txt
+        mv $project_path/docs/tmp.txt $project_path/docs/requirements.txt
+    fi
 
     return 0
 }
