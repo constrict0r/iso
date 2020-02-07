@@ -2,7 +2,7 @@
 
 Use this role to generate a *remaster.iso* image (replace with your data):
 
-.. substitution-code-block:: bash
+.. code-block:: bash
 
   ansible localhost -m include_role -a name=constrict0r.iso -K -e \
       'username=constrict0r userpass=1234 rootpass=1234 device=sda preseed=true \
