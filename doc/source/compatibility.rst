@@ -6,5 +6,3 @@ Compatibility
 .. include:: part/compatibility/raspbian.inc
 
 .. include:: part/compatibility/stretch.inc
-
-.. include:: part/compatibility/xenial.inc

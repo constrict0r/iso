@@ -1189,8 +1189,6 @@ Compatibility
 
 * `Debian Stretch <https://wiki.debian.org/DebianStretch>`_.
 
-* `Ubuntu Xenial <http://releases.ubuntu.com/16.04/>`_.
-
 
 
 Limitations

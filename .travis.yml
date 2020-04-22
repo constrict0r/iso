@@ -10,8 +10,6 @@ jobs:
   include:
     - os: linux
       dist: bionic
-    - os: linux
-      dist: xenial
 
 before_script:
   - sudo bash -c 'apt update'
