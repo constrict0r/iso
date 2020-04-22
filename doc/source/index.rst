@@ -1,5 +1,5 @@
 |PROJECT|
-==============================================================================
+==============================================================
 
 |TRAVIS_BADGE|
 
@@ -18,12 +18,12 @@ Source code on:
 
 |GITLAB_LINK|.
 
-.. include:: parts/doombots.inc
+.. include:: part/doombot.inc
 
-.. include:: parts/ingredients.inc
+.. include:: part/ingredient.inc
 
 Contents
-==============================================================================
+==============================================================
 
 .. toctree::
 
@@ -31,17 +31,17 @@ Contents
 
    usage
 
-   variables
+   variable
 
-   requirements
+   requirement
 
    compatibility
 
-   limitations
+   limitation
 
    license
 
-   links
+   link
 
    uml
 

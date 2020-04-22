@@ -1,5 +1,5 @@
 Limitations
-------------------------------------------------------------------------------
+--------------------------------------------------------------
 
 - This role uses the **username** variable to set both the non-root username
   and its full user name.
@@ -41,4 +41,4 @@ Limitations
  Luckily this step occurs at the beggining of the installation process, affects
  only wireless setups and does not affect virtual machines or containers.
 
-.. include:: parts/limitations/vault.inc
+.. include:: part/limitation/vault.inc

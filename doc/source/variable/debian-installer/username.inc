@@ -3,7 +3,7 @@ Non-root username.
 This variable answer to the following step of the Debian Installer:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_05_username.png
-   :alt: di_02_username
+   :alt: di_05_username
 
 Defaults to *debian*.
 

@@ -1,9 +1,9 @@
 UML
-------------------------------------------------------------------------------
+--------------------------------------------------------------
 
-.. include:: parts/uml/deployment.inc
+.. include:: part/uml/deploy.inc
 
-.. include:: parts/uml/main.inc
+.. include:: part/uml/main.inc
 
 .. include:: uml/cleanup.inc
 
@@ -11,7 +11,7 @@ UML
 
 .. include:: uml/initrd-partitioning.inc
 
-.. include:: uml/initrd-set-answers.inc
+.. include:: uml/initrd-set-answer.inc
 
 .. include:: uml/menu.inc
 

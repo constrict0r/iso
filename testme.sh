@@ -1,38 +1,59 @@
 #!/bin/bash
 #
-# @file tests
-# @brief Setup requirements and run tests, from root folder run: ./testme.sh.
+# @file testme
+# @brief Setup requirements - run tests, from root folder run: ./testme.sh.
 
-# Default values.
-# Become root password to pass to Ansible roles.
-BECOME_PASS=''
-
-# Wheter to generate or not a coverage report.
-COVERAGE_REPORT=false
-
-# String indicating to run only tests of specific types.
-# The allowed values are: abmp, being a = ansible, 
-# b = bats, m = molecule, p = python.
-ONLY_TYPE=''
-
-# Path to the project where to run tests, if not specified the current path
-# will be used.
+# Path to the project used as source, defaults to current path.
 PROJECT_PATH=$(pwd)
 
-# Python executable to use: python (python2) or python3.
-PYTHON_EXEC=python
+# Python executable to use: python or python3. Empty by default.
+PYTHON_EXEC=''
+
+# Install requirements or not.
+INSTALL_REQUIREMENT=false
+
+# Run inside a Docker container.
+DOCKER=false
+
+# Docker image to use.
+DOCKER_IMAGE='debian:stable-slim'
+
+# String indicating to run only tests of specific types.
+# The allowed values are:
+# - a: Bare metal Ansible tests.
+# - b: Bats tests.
+# - m: Molecule tests.
+# - p: Pytest tests.
+# - t: Tox tests.
+# - y: Poetry tests.
+# The full string is: abmpty.
+TYPE=''
+
+# 'Become root password' to pass to Ansible roles.
+BECOME_PASS=''
+
+# Wheter to generate or not a Python coverage report.
+COVERAGE_REPORT=false
 
 # When set to true, enter recursively on each directory on project's
-# root folder and execute every testme.sh script found.
+# root folder and execute every testme.sh script found (add a
+# .testignore file to ignore a directory).
 RECURSIVE=false
 
-# Wheter to install or not requirements.txt files.
-REQUIREMENTS_INSTALL=false
-
 # Show time report on stdout when finished.
-TIME=false
+CLOCK=false
 
-# @description Determines if ansible related tests exists.
+# Internal flag to prevent executing pytest two times when
+# running Ansible tests.
+PYTEST_EXECUTED=false
+
+# @description Determines if Ansible bare metal tests exists.
+#
+# This function tries:
+# - Search .yml files on $test_path.
+# - Search .yaml files on $test_path.
+# - Search for the library folder.
+# - Search for the test_plugins folder.
 #
 # @arg $1 string Optional project path. Default to current path.
 #
@@ -40,107 +61,482 @@ TIME=false
 # @exitcode 1 on failure.
 #
 # @return true if ansible tests exists, false otherwise.
-function ansible_tests_exists() {
+function ansible_exist() {
 
     local project_path=$(pwd)
     [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
 
-    # Bare metal tests (no molecule/docker).
+    local test_path=$(get_test_path $project_path)
+    ! [[ -d $test_path ]] && echo false && return 1
+
+    # Bare metal tests (no molecule).
     # Search for yml tests.
-    ls $project_path/tests/*.yml &>/dev/null
-    [ $? -eq 0 ] && echo true && return 0
+    local ls_result=$(ls $test_path)
+    [[ $ls_result == *'.yml'* ]] && echo true && return 0
 
     # Search for .yaml tests.
-    ls $project_path/tests/*.yaml &>/dev/null
-    [ $? -eq 0 ] && echo true && return 0
+    ls_result=$(ls $test_path)
+    [[ $ls_result == *'.yaml'* ]] && echo true && return 0
 
-    # Brute force search, search ansible word on all files.
-    # If we do not create soft links (with ln -s) for
-    # plugins and modules it could crash the python and ansible tests.
-    ! [[ -z $(grep -r "ansible" $project_path) ]] && echo true && return 0
+    # Check if ./library directory exists and contains py files.
+    if [[ -d $project_path/library ]]; then
+        ls_result=$(ls $project_path/library)
+        [[ $ls_result == *'.py'* ]] && echo true && return 0
+    fi
+
+    # Check if ./test_plugins directory exists and
+    # contains py files.
+    if [[ -d $project_path/test_plugins ]]; then
+        ls_result=$(ls $project_path/test_plugins)
+        [[ $ls_result == *'.py'* ]] && echo true && return 0
+    fi
 
     echo false && return 0
 
 }
 
-# @description Generates coverage report.
+# @description Execute ansible tests.
 #
-# Creates a .coverage file and a htmlcov folder.
+# @arg $1 string Optional project path. Default to current path.
+# @arg $2 string Optional become password.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function ansible_run() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    if [[ $(ansible_exist $project_path) == 'true' ]]; then
+
+        ansible_setup $project_path
+        [ $? -eq 1 ] && return 1
+
+        local test_path=$(get_test_path $project_path)
+
+        local become_parameter=''
+        ! [[ -z $2 ]] && become_parameter="ansible_become_pass: '$2', "
+
+        # Recolect the list of playbooks to execute.
+        local yml_files=''
+
+        local ls_result=$(ls $test_path)
+        [[ $ls_result == *'.yml'* ]] && yml_files=$(ls $test_path/*.yml)
+
+        local ls_result=$(ls $test_path)
+        [[ $ls_result == *'.yaml'* ]] && yml_files="yml_files $(ls $test_path/*.yaml)"
+
+        # Bare metal tests, using test playbook files.
+        # dependency roles must be preinstalled: ansible-galaxy install.
+        local python_exec=$(get_python_exec)
+
+        # Check if inventory exists, if not, create a temporary one.
+        local inventory_path=$test_path/inventory
+        if ! [[ -f $inventory_path ]]; then
+            echo 'localhost' > $test_path/inventory_tmp
+            inventory_path=$test_path/inventory_tmp
+        fi
+
+        for playbook in $yml_files; do
+
+            ansible-playbook -i $inventory_path $playbook -e \
+                             "{${become_parameter}ansible_python_interpreter: '/usr/bin/$python_exec'}"
+
+            # Clear history for security.
+            ! [[ -z $become_parameter ]] && history -c
+        done
+
+    fi
+
+    [[ -f $test_path/inventory_tmp ]] && rm -f $test_path/inventory_tmp
+
+    return 0
+
+}
+
+# @description Setup ansible tests.
+#
+# @arg $1 string Optional project path. Default to current_path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function ansible_setup() {
+
+    # Ensure Python requirements are installed.
+    install_pip
+    [ $? -eq 1 ] && return 1
+
+    if [[ $(validate 'ansible') == 'false' ]]; then
+        install_pip 'ansible>=2.8'
+        [ $? -eq 1 ] && return 1
+    fi
+
+    if [[ $(validate_pip 'requests') == 'false' ]]; then
+        install_pip 'requests'
+        [ $? -eq 1 ] && return 1
+    fi
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    local test_path=$(get_test_path $project_path)
+
+    if [[ -d $project_path/library ]] && [[ -d $test_path ]]; then
+        ansible_setup_python $project_path/library $test_path
+        [ $? -eq 1 ] && return 1
+    fi
+
+    if [[ -d  $project_path/test_plugins ]] && [[ -d $test_path ]]; then
+         ansible_setup_python $project_path/test_plugins $test_path
+         [ $? -eq 1 ] && return 1
+    fi
+
+    # Check if project is an ansible role.
+    if [[ -f $project_path/meta/main.yml ]]; then
+
+        # Get author from meta information.
+        local author=$(cat $project_path/meta/main.yml | grep 'author:')
+
+        if ! [[ -z $author ]]; then
+
+            # Remove the 'author:' part.
+            author=${author//author\: /}
+
+            # Sanitize the string.
+            author=$(sanitize "$author")
+
+            local role_name=$(basename $project_path)
+
+            # Copy role to ~/.ansible/roles.
+            ! [[ -d ~/.ansible/roles ]] && mkdir -p ~/.ansible/roles
+
+            # Prevents copy a role with double author name if we are
+            # inside an installed role (i.e.: ~/.ansible/roles/author.role).
+            if [[ $role_name == *"${author}."* ]]; then
+                cp -rf $project_path ~/.ansible/roles &>/dev/null
+            else
+                cp -rf $project_path ~/.ansible/roles/${author}.${role_name}
+            fi
+        fi
+
+    # If ansible role.
+    fi
+
+    return 0
+
+}
+
+# @description Create symbolic links for Ansible modules and plugins.
+#
+# Link the directories:
+# - ./library
+# - ./test_plugins
+#
+# To the locations:
+# - $test_path/library
+# - $test_path/test_plugins
+#
+# Each .py file found under those directories will be compiled.
+#
+# @arg $1 Source directory (i.e.: $project_path/library).
+# @arg $2 Destination directory (i.e.: $test_path).
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function ansible_setup_python() {
+
+    if [[ -z $1 ]] || ! [[ -d $1 ]]; then
+        error_message 'path' "$1"
+        error_message 'custom' 'Must specify an existent source directory.'
+    fi
+
+    if [[ -z $2 ]] || ! [[ -d $2 ]]; then
+        error_message 'path' "$2"
+        error_message 'custom' 'Must specify an existent destiny directory.'
+    fi
+
+    local source_path="$( cd "$1" ; pwd -P )"
+    local destiny_path="$( cd "$2" ; pwd -P )"
+
+    # Check if source directory contains python files.
+    local ls_result=$(ls $source_path)
+    if [[ $ls_result == *'.py'* ]]; then
+
+        ln -fs $source_path $destiny_path
+
+        # Once we know .py files exists, list again and store the listings.
+        local files_list=$(ls $source_path/*.py)
+
+        # Ensure Python requirements are installed.
+        install_pip
+        [ $? -eq 1 ] && return 1
+        local python_exec=$(get_python_exec)
+
+        for file_item in $file_list; do
+            $python_exec -m py_compile $file_item
+        done
+    fi
+
+    return 0
+
+}
+
+# @description Determines if Bats tests exists.
+#
+# This function tries:
+# - Search .bats files on $test_path.
 #
 # @arg $1 string Optional project path. Default to current path.
 #
 # @exitcode 0 if successful.
 # @exitcode 1 on failure.
 #
-# @stdout .coverage file, htmlcov folder.
-function coverage_report() {
-
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
-
-    [[ $(validate $python_exec) == false ]] && return 1
+# @return true if ansible tests exists, false otherwise.
+function bats_exist() {
 
     local project_path=$(pwd)
     [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
 
-    # Check if bare metal tests exists.
-    ls $project_path/tests/*.py &>/dev/null
+    local test_path=$(get_test_path $project_path)
+    ! [[ -d $test_path ]] && echo false && return 1
+
+    local test_list=$(ls $test_path)
+    [[ $test_list == *'.bats'* ]] && echo true && return 0
+
+    echo false && return 0
+
+}
+
+# @description Execute bats tests.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function bats_run() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    # Verify bats tests exists.
+    [[ $(bats_exist $project_path) == 'false' ]] && return 0
+
+    bats_setup
     [ $? -eq 1 ] && return 1
 
-    local pip_list=$($python_exec -m pip list)    
+    # Verify test folder exists.
+    local test_path=$(get_test_path $project_path)
+    ! [[ -d $test_path ]] && error_message 'path' "$test_path" && return 1
 
-    if [[ $pip_list == *"coverage"* ]]; then
-        local current_path=$(pwd)
-        cd $project_path
-        $python_exec -m coverage run --omit */*-packages/* -m pytest tests/*.py
-        $python_exec -m coverage html
-        cd $current_path
+    # Run bats tests.
+    bats $test_path
+
+    return 0
+}
+
+# @description Setup bats tests.
+#
+# @noargs
+#
+# @exitcode 0 if succesuful.
+# @exitcode 1 if failure.
+function bats_setup() {
+
+    install_apt 'bats'
+    [ $? -eq 1 ] && return 1
+
+    return 0
+
+}
+
+# @description Create a parameters string to pass to each
+# recursively call of the testme.sh script.
+#
+#  - *g* (coverage report).
+#  - *i* (install requirements).
+#  - *k* (clock report).
+#  - *K* (become password for Ansible roles).
+#  - *t* <type> (only tests of type).
+#  - *x* <python executable>.
+#
+# @arg $@ string Bash arguments.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+#
+# @stdout Prints the created parameter string.
+function create_parameter_string() {
+
+    local become_pass_regex='-K (.*)'
+    local python_exec_regex='-x (python[0-9]*)'
+    local type_regex='-t ([abmpty])+'
+    local parameter_string=''
+
+    [[ "$@" == *'-g'* ]] && parameter_string+='-g '
+    [[ "$@" == *'-i'* ]] && parameter_string+='-i '
+
+    # Type.
+    if [[ $@ =~ $type_regex ]]; then
+        parameter_string+="-t ${BASH_REMATCH[1]} "
     fi
+
+    # Clock.
+    [[ "$@" == *'-k'* ]] && parameter_string+='-k '
+
+    if [[ $@ =~ $python_exec_regex ]]; then
+        parameter_string+="-x ${BASH_REMATCH[1]} "
+    fi
+
+    # Become password.
+    if [[ $@ =~ $become_pass_regex ]]; then
+        parameter_string+="-K $(sanitize ${BASH_REMATCH[1]})"
+    fi
+
+    echo "$parameter_string"
+
+    return 0
+}
+
+# @description Setups Docker.
+#
+# @noargs
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function docker_setup() {
+
+    # Ensure Python requirements are installed.
+    install_pip
+    [ $? -eq 1 ] && return 1
+
+    # Docker must be installed.
+    if [[ $(validate_apt 'docker-ce') == 'false' ]]; then
+
+        # Check if can install.
+        if [[ $(validate 'install') == 'true' ]]; then
+
+            # Ensure python requirements are present.
+            install_pip
+
+            # Official procedure:
+            # https://docs.docker.com/install/linux/docker-ce/debian.
+            # https://docs.docker.com/install/linux/docker-ce/ubuntu.
+            uninstall_apt 'containerd containerd.io docker docker-ce docker-engine docker.io runc'
+            [ $? -eq 1 ] && return 1
+
+            install_apt 'apt-transport-https ca-certificates curl gnupg2 software-properties-common'
+            [ $? -eq 1 ] && return 1
+
+            # Get 'debian' or 'ubuntu' name.
+            local os_name=$(cat /etc/os-release | grep ^ID=)
+            os_name="${os_name//ID=/}"
+
+            # Get codename, i.e.: 'buster'.
+            local os_codename=$(cat /etc/os-release | grep ^VERSION_CODENAME=)
+            os_codename="${os_codename//VERSION_CODENAME=/}"
+
+            # Add docker key.
+            echo 'Adding docker key with apt-key add ...'
+            curl -fsSL https://download.docker.com/linux/${os_name}/gpg | sudo apt-key add -
+            echo 'Adding docker fingerprint with apt-key ...'
+            sudo apt-key fingerprint 0EBFCD88
+
+            # Add docker repository.
+            echo 'Adding docker repository with add-apt-repository ...'
+            sudo add-apt-repository \
+                 "deb [arch=amd64] https://download.docker.com/linux/$os_name \
+                  $os_codename \
+                  stable"
+
+            # Install all requirements.
+            install_apt 'docker-ce docker-ce-cli containerd.io'
+            [ $? -eq 1 ] && return 1
+
+        else
+            error_message 'docker'
+            return 1
+
+        fi
+    fi
+
     return 0
 
 }
 
 # @description Shows an error message.
 #
-# @arg $1 string Message to show.
+# @arg $1 string Error name: custom, execution, path, sudo, <name>.
+# @arg $2 string Optional text to use on error messages.
 #
 # @exitcode 0 if successful.
 # @exitcode 1 on failure.
+#
+# @stdout 'Error message'
 function error_message() {
-    [[ -z $1 ]] && return 0
-    local python_exec='python'
-    
+
+    [[ -z $1 ]] && return 1
+
     case $1 in
-    molecule)
-        echo "An error occurred executing molecule."
-        ;;
-    path)
-        echo "$1 is not an existent directory."
-        ;;
-    *)
-        ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
-        echo '        __.....__'
-        echo '     ."" _  o    "`.'
-        echo '   ." O (_)     () o`.'
-        echo '  .           O       .'
-        echo ' . ()   o__...__    O  .'
-        echo '. _.--"""       """--._ .'
-        echo ':"                     ";'
-        echo ' `-.__    :   :    __.-"'
-        echo '      """-:   :-"""'
-        echo '         J     L'
-        echo '         :     :'
-        echo '        J       L'
-        echo '        :       :'
-        echo '        `._____."'
-        echo "$1 tests detected ..."
-        echo "But $1 is not installed ..."
-        echo "Install it with:"
-        echo "sudo apt install $1"
-        echo "Or run:"
-        echo "sudo $python_exec -m pip install $1"
-        echo "if it is a python package (i.e.: ansible)."
-        ;;
+        custom)
+            if ! [[ -z $2 ]]; then
+                echo "$2"
+            else
+                echo 'Unknown error ocurred.'
+            fi
+            ;;
+
+        execution)
+            if ! [[ -z $2 ]]; then
+                echo "An error occurred executing $2."
+            else
+                echo 'An error ocurred during execution.'
+            fi
+            ;;
+
+        path)
+            if ! [[ -z $2 ]]; then
+                echo "$2 is not an existent directory."
+            else
+                echo 'Inexistent directory used.'
+            fi
+            ;;
+
+        sudo)
+            echo "It's not possible to adquire administrative permissions."
+            echo 'It could be one of the following causes:'
+            echo '- The program "sudo" is not installed.'
+            echo '- Your user is not on the "root" or "sudo" groups.'
+            echo 'Run:'
+            echo 'su -c "apt install -y sudo" && su -c "sudo adduser $(whoami) sudo" && su'
+            ;;
+
+        uninstall)
+            if ! [[ -z $2 ]]; then
+                echo "Cannot uninstall $2."
+            else
+                echo 'Cannot uninstall package.'
+            fi
+            ;;
+
+        *)
+            echo '        __.....__'
+            echo '     ."" _  o    "`.'
+            echo '   ." O (_)     () o`.'
+            echo '  .           O       .'
+            echo ' . ()   o__...__    O  .'
+            echo '. _.--"""       """--._ .'
+            echo ':"                     ";'
+            echo ' `-.__    :   :    __.-"'
+            echo '      """-:   :-"""'
+            echo '         J     L'
+            echo '         :     :'
+            echo '        J       L'
+            echo '        :       :'
+            echo '        `._____."'
+            echo "$1 needs to be installed ..."
+            echo "Run:"
+            echo "./$(basename $0).sh -i"
+            ;;
     esac
     return 0
 }
@@ -148,16 +544,17 @@ function error_message() {
 # @description Get bash parameters.
 #
 # Accepts:
-#
-#  - *c* (coverage report).
+#  - *d* (docker).
+#  - *D* (docker image).
+#  - *g* (coverage report).
 #  - *h* (help).
 #  - *i* (install requirements).
+#  - *k* (clock).
 #  - *K* (become password for Ansible roles).
-#  - *o* <types> (only tests of type).
-#  - *p* <path> (project_path).
+#  - *p* <project_path>.
 #  - *r* (recursive).
-#  - *t* (time report).
-#  - *x* (python executable).
+#  - *t* <types> (only tests of type).
+#  - *x* <python executable>.
 #
 # @arg '$@' string Bash arguments.
 #
@@ -166,22 +563,94 @@ function error_message() {
 function get_parameters() {
 
     # Obtain parameters.
-    while getopts 'c;h;i;K:o:p:r;t;x:' opt; do
+    while getopts 'd;D:g;h;i;k;K:p:r;t:x:' opt; do
         OPTARG=$(sanitize "$OPTARG")
         case "$opt" in
-            c) COVERAGE_REPORT=true;;
+            d) DOCKER=true;;
+	    D) DOCKER_IMAGE="${OPTARG}";;
+            g) COVERAGE_REPORT=true;;
             h) help && exit 0;;
-            i) REQUIREMENTS_INSTALL=true;;
+            i) INSTALL_REQUIREMENT=true;;
+            k) CLOCK=true;;
             K) BECOME_PASS="${OPTARG}";;
-            o) ONLY_TYPE="${OPTARG}";;
             p) PROJECT_PATH="${OPTARG}";;
             r) RECURSIVE=true;;
-            t) TIME=true;;
+            t) TYPE="${OPTARG}";;
             x) [[ "${OPTARG}" == *'python'* ]] && PYTHON_EXEC="${OPTARG}";;
         esac
     done
 
     return 0
+}
+
+# @description Obtains the Python executable to use: python or python3.
+#
+# This function tries:
+# - Use the $PYTHON_EXEC variable if not empty and like 'python'.
+# - Use 'python3' is available.
+# - Use 'python' if available.
+#
+# @args noargs
+#
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
+#
+# @stdout the python executable (python or python3).
+function get_python_exec() {
+
+    # Try user passed exec.
+    if ! [[ -z $PYTHON_EXEC ]]; then
+        if [[ $(validate_apt "$PYTHON_EXEC") == 'true' ]]; then
+            echo "$PYTHON_EXEC" && return 0
+        fi
+
+        # Check if python was installed by compiling or other method.
+        if [[ $($PYTHON_EXEC --version) -eq 0 ]]; then
+            echo "$PYTHON_EXEC" && return 0
+        fi
+    fi
+
+    # Try python3.
+    if [[ $(validate_apt 'python3') == 'true' ]]; then
+        echo 'python3' && return 0
+    fi
+    python3 --version &>/dev/null
+    [ $? -eq 0 ] && echo 'python3' && return 0
+
+    # Try python.
+    if [[ $(validate_apt 'python') == 'true' ]]; then
+        echo 'python' && return 0
+    fi
+    python --version &>/dev/null
+    [ $? -eq 0 ] && echo 'python' && return 0
+
+    # Python is not installed.
+    echo '' && return 1
+}
+
+# @description Obtains the project's test directory.
+#
+# This function tries:
+# - Search for the */tests* directory.
+# - Default to */test* directory.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
+#
+# @stdout Path to the test directory.
+function get_test_path() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    # Try /tests.
+    [[ -d $project_path/tests ]] && echo "$project_path/tests" && return 0
+
+    # Default /test.
+    echo "$project_path/test" && return 0
+
 }
 
 # @description Shows help message.
@@ -194,64 +663,243 @@ function help() {
 
     echo 'Auto discover and execute project tests.'
     echo 'Parameters:'
-    echo '-c (coverage): When present, generate coverage report.'
+    echo '-d (docker): Execute the tests inside a Docker container.'
+    echo '-D (docker image): Docker image to use.'
+    echo '-g (coverage): Generate a Python coverage report.'
     echo '-h (help): Show this help message.'
-    echo '-i (install requirements): When present all found requirements.txt
-             files are installed.'
-    echo '-K (become pass): Plain text sudo password (for Ansible roles).'
-    echo '-o <only type> (type string): Optional string containing any of the
-             following characters: a, b, m, p. Each one indicating to only
-             execute a specific type of tests, being a = ansible, b = bats,
-             m = molecule, p = python, for example the value "-o mp" will
-             execute the molecule and python tests only.'
-    echo '-p <file_path> (project path): Optional absolute file path to the
-             root directory of the project to test. if this
-             parameter is not especified, the current path will be used.'
-    echo "-r (recursive): Enter recursively each directory on project's root
-             directory and execute every testme.sh script found."
-    echo '-t (time): Show time report when finished'
-    echo '-x <python-exec> (executable): Select to run using python (python2)
-             or python3. Defaults to python.'
+    echo '-i (requirements): Install requirements.'
+    echo '-k (clock): Show time report when finished'
+    echo '-K (become pass): Plain-text sudo password (for Ansible roles).'
+    echo '-t <type>: Optional string containing:
+              a (Ansible bare metal tests)
+              b (Bats tests)
+              m (Molecule tests)
+              p (Pytest tests)
+              t (Tox tests)
+              y (Poetry tests)'
+    echo "-p <project-path>: Absolute path to project's root directory."
+    echo "-r (recursive): Enter recursively each directory on project's
+             root directory and execute every testme.sh script found."
+    echo '-x <python-executable>: Run using python or python3.'
     echo 'Example:'
-    echo "./testme.sh -c -i -o abmp -p /home/username/project -r -x python3"
+    echo "./testme.sh -d -D debian:stable-slim -g -i -k -K pass -t abmpty -p /project/path -r -x python3"
     return 0
 
 }
 
-# @description Create a parameters string to pass to each
-# recursively called testme.sh.
+# @description Installs Apt packages.
 #
-# @arg $@ string Bash arguments.
+# @arg $1 string List of package names to install, must be space-separated.
 #
-# @exitcode 0 if successful.
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
+function install_apt() {
+
+    [[ -z $1 ]] && return 1
+
+    local package_array=($(echo $1 | tr " " "\n"))
+
+    # Prevents updating apt twice.
+    local apt_updated=false
+
+    # sudo must be installed.
+    if [[ $(validate_apt 'sudo') == 'false' ]]; then
+        # Add current user to sudoers.
+        local current_username=$(whoami)
+        echo 'Installing sudo using su -c ...'
+        su -c "apt update && apt install -y sudo && /usr/sbin/addgroup $current_username sudo"
+        apt_updated=true
+    fi
+
+    # build-essential must be installed.
+    if [[ $(validate_apt 'build-essential') == 'false' ]]; then
+
+        # Validate if can install
+        if [[ $(validate 'install') == 'false' ]]; then
+            error_message 'build-essential'
+            echo '░░░░░░░░▄▄▄███░░░░░░░░░░░░░░░░░░░░'
+            echo '░░░▄▄██████████░░░░░░░░░░░░░░░░░░░'
+            echo '░███████████████░░░░░░░░░░░░░░░░░░'
+            echo '░▀███████████████░░░░░▄▄▄░░░░░░░░░'
+            echo '░░░███████████████▄███▀▀▀░░░░░░░░░'
+            echo '░░░░███████████████▄▄░░░░░░░░░░░░░'
+            echo '░░░░▄████████▀▀▄▄▄▄▄░▀░░░░░░░░░░░░'
+            echo '▄███████▀█▄▀█▄░░█░▀▀▀░█░░▄▄░░░░░░░'
+            echo '▀▀░░░██▄█▄░░▀█░░▄███████▄█▀░░░▄░░░'
+            echo '░░░░░█░█▀▄▄▀▄▀░█▀▀▀█▀▄▄▀░░░░░░▄░▄█'
+            echo '░░░░░█░█░░▀▀▄▄█▀░█▀▀░░█░░░░░░░▀██░'
+            echo '░░░░░▀█▄░░░░░░░░░░░░░▄▀░░░░░░▄██░░'
+            echo '░░░░░░▀█▄▄░░░░░░░░▄▄█░░░░░░▄▀░░█░░'
+            echo '░░░░░░░░░▀███▀▀████▄██▄▄░░▄▀░░░░░░'
+            echo '░░░░░░░░░░░█▄▀██▀██▀▄█▄░▀▀░░░░░░░░'
+            echo '░░░░░░░░░░░██░▀█▄█░█▀░▀▄░░░░░░░░░░'
+            echo '░░░░░░░░░░█░█▄░░▀█▄▄▄░░█░░░░░░░░░░'
+            echo '░░░░░░░░░░█▀██▀▀▀▀░█▄░░░░░░░░░░░░░'
+            echo '░░░░░░░░░░░░▀░░░░░░░░░░░▀░░░░░░░░░'
+            return 1
+        fi
+
+        echo 'Installing build-essential ...'
+        [[ $apt_updated == 'false' ]] && sudo apt update && apt_updated=true
+        sudo apt install --no-install-recommends -y build-essential
+
+    fi
+
+    for package_name in ${package_array[@]}; do
+
+        # Validate if the package is already installed via apt.
+        [[ $(validate_apt "$package_name") == 'true' ]] && continue
+
+        # Validate if can install
+        if [[ $(validate 'install') == 'false' ]]; then
+            error_message "$package_name"
+            return 1
+        fi
+
+        echo "Installing $package_name ..."
+
+        # Check if the package is pip to handle specially.
+        if [[ "$package_name" == 'pip' ]] || [[ "$package_name" == 'pip3' ]] ||
+               [[ "$package_name" == 'python-pip' ]] || [[ "$package_name" == 'python3-pip' ]]; then
+
+            local python_exec=$(get_python_exec)
+
+            if [[ -z $python_exec ]]; then
+                install_apt python3
+                [ $? -eq 1 ] && return 1
+                python_exec=python3
+            fi
+
+            if [[ $(validate_pip_installed) == 'false' ]]; then
+
+                # Install pip.
+                package_name="${python_exec}-pip"
+
+            fi
+
+        fi
+
+        [[ $apt_updated == 'false' ]] && sudo apt update && apt_updated=true
+        sudo apt install --no-install-recommends -y "$package_name"
+
+    done
+
+    return 0
+}
+
+# @description Installs Python packages via pip.
+#
+# This function ensures that Python, Pip and Setuptools are installed
+# and then installs all required packages.
+#
+# You can pass to this function:
+# - A filepath to a requirements*.txt file to be installed.
+# - A filepath to directory containing requirements*.txt files to install.
+# - A single package name.
+#
+# If this function is called without passing any argument to it,
+# it will search for requirements*.txt files on the current directory.
+#
+# This function expects that each requirements filename has the text
+# 'requirements' included on it and to have the .txt extension.
+#
+# This function will always check for Python, Pip and Setuptools to be
+# installed and will try to install them if not present.
+#
+# Each package will be checked to see if its installed, if not installed
+# then this function proceeds to install it.
+#
+# @arg $1 string Optional filepath, path to dir or single package name.
+#
+# @exitcode 0 on success.
 # @exitcode 1 on failure.
-#
-# @stdout Prints the created parameters string.
-function create_recursive_parameters_string() {
-    local become_pass_regex='-K (.*)'
-    local python_exec_regex='-x (python[0-9]*)'
-    local only_type_regex='-o ([abmp])+'
-    local parameters_string=''
+function install_pip() {
 
-    [[ "$@" == *'-c'* ]] && parameters_string+='-c '
-    [[ "$@" == *'-i'* ]] && parameters_string+='-i '
+    local python_exec=$(get_python_exec)
 
-    if [[ $@ =~ $only_type_regex ]]; then
-        parameters_string+="-o ${BASH_REMATCH[1]} "
+    # Python must be installed.
+    if [[ -z $python_exec ]]; then
+        install_apt 'python3'
+        [ $? -eq 1 ] && return 1
+        python_exec='python3'
     fi
 
-    [[ "$@" == *'-t'* ]] && parameters_string+='-t '
+    # Pip must be installed.
+    install_apt "${python_exec}-pip"
+    [ $? -eq 1 ] && return 1
 
-    if [[ $@ =~ $python_exec_regex ]]; then
-        parameters_string+="-x ${BASH_REMATCH[1]} "
+    # Setuptools must be installed.
+    if [[ $(validate_apt "${python_exec}-setuptools") == 'false' ]] &&
+           [[ $(validate_pip 'setuptools') == 'false' ]]; then
+        $python_exec -m pip install setuptools
     fi
 
-    if [[ $@ =~ $become_pass_regex ]]; then
-        parameters_string+="-K $(sanitize ${BASH_REMATCH[1]})"
+    # Virtualenv must be installed.
+    if [[ $(validate_apt "${python_exec}-venv") == 'false' ]] &&
+           [[ $(validate_pip 'virtualenv') == 'false' ]]; then
+        install_apt "${python_exec}-venv"
     fi
 
-    echo "${parameters_string}"
+    # Path to where requirement files resides.
+    local base_path=''
+    local file_name=''
 
+    # List of files to install.
+    local requirement_list=''
+
+    # Check if single file.
+    if ! [[ -z $1 ]] && [[ -f $1 ]]; then
+        requirement_list=$1
+        base_path=$(dirname $1)
+
+    # Check if directory.
+    elif ! [[ -z $1 ]] && [[ -d $1 ]]; then
+        requirement_list=$(ls $1)
+        base_path=$1
+
+    # Single package, install it.
+    elif ! [[ -z $1 ]]; then
+        if [[ $(validate_pip "$1") == 'false' ]]; then
+            $python_exec -m pip install $1
+            return 0
+        fi
+    fi
+
+    # If at least one requirement file exists.
+    if [[ "$requirement_list" =~ .*requirements.*.txt ]]; then
+
+        # Traverse all requirements files, i.e.:
+        # requirements.txt, requirements-dev.txt.
+        for requirement_file in $requirement_list; do
+
+            if [[ "$requirement_file" == *'requirements'* ]]; then
+
+                file_name=$(basename $requirement_file)
+
+                # Copy file and add a newline to it to overcome bash limit.
+                cp -f $base_path/$file_name reqs-current-tmp.txt
+                echo '' >> reqs-current-tmp.txt
+
+                # Traverse current requirements file checking item by
+                # item if is installed or not.
+                while read LINE
+                do
+                    # If not installed, install it.
+                    if ! [[ -z $LINE ]] &&
+                        [[ $(validate_pip "$LINE") == 'false' ]];
+                    then
+                        $python_exec -m pip install $LINE
+                    fi
+
+                    # Traverse requirement items (item by item).
+                done < reqs-current-tmp.txt
+                rm -f reqs-current-tmp.txt
+
+            fi
+
+        # Traverse requirements files (file by file).
+        done
+    fi
     return 0
 }
 
@@ -266,94 +914,149 @@ function main() {
     get_parameters "$@"
 
     if ! [[ -d $PROJECT_PATH ]]; then
-        error_message 'path'  
+        error_message 'path' "$PROJECT_PATH"
         return 1
     fi
 
-    # Track time.
-    [[ $TIME == true ]] && start_time=`date +%s`
+    local parameter_string=''
 
-    if [[ $RECURSIVE == true ]]; then
+    # Run on docker.
+    if [[ $DOCKER == "true" ]]; then
+
+        # Handle docker setup.
+        docker_setup
+        [ $? -eq 1 ] && return 1
+
+        parameter_string=$(create_parameter_string "$@")
+        if [[ $RECURSIVE == 'true' ]]; then
+            parameter_string="{parameter_string} -r"
+        fi
+
+        echo " DOCKA: $DOCKER_IMAGE  ..."
+        echo '     ------------'
+        echo '    /  (_)_      \'
+        echo '  /)     (_) (_)  \'
+        echo ' |                 |'
+        echo '| _   (_)   _   (_) |'
+        echo '|(_)  _  (_) _   (_)|'
+        echo '|___(_)_____(_)_____|'
+        echo ' |||||||||||||||||||'
+        echo '        |   |'
+        echo '        |   |'
+        echo '        |   |'
+        echo '        |___|'
+        echo '--------------------'
+
+	local proj_name=$(basename $PROJECT_PATH)
+        docker run \
+               --rm \
+               --mount type=bind,source="$PROJECT_PATH",target=/$proj_name \
+               $DOCKER_IMAGE \
+               bash -c "cd /$proj_name && ./testme.sh -i ${parameter_string}"
+
+        return 0
+    fi
+
+    # Track time.
+    local start_time=''
+    [[ $CLOCK == 'true' ]] && start_time=`date +%s`
+
+    # Recursive run.
+    if [[ $RECURSIVE == 'true' ]]; then
 
         # Verify if project has subdirectories.
         find "$PROJECT_PATH" -mindepth 1 -type d -print &>/dev/null
-        [ $? -eq 1 ] && error_message 'path' && return 1
+        if [ $? -eq 1 ]; then
+            error_message 'custom' "$PROJECT_PATH has no subidrectories."
+            return 1
+        fi
 
         # Create recursive parameters string from bash parameters string.
-        local recursive_parameters=$(create_recursive_parameters_string "$@")
+        parameter_string=$(create_parameter_string "$@")
 
         # Enter each subdirectory checking if testme.sh exists.
-        local directories_list=$(find $main_project -type d -print)
+        local directories_list=$(find $PROJECT_PATH -type d -print)
 
         for directory in $directories_list; do
-            # if testme.sh exists and a .testignore does not exists, execute.
-            if [[ -f $directory/testme.sh ]] && ! [[ -f $directory/.testignore ]]; then
-                ./testme.sh -p $( cd "$directory" ; pwd -P ) $recursive_parameters
+            # testme.sh exists and a .testignore does not exists, execute.
+            if [[ -f $directory/testme.sh ]] &&
+                   ! [[ -f $directory/.testignore ]]; then
+                ./testme.sh -p $( cd "$directory" ; pwd -P ) $parameter_string
                 show_time $start_time
             fi
         done
 
     else
-        # Run bats tests.
-        if [[ -z $ONLY_TYPE ]] || [[ $ONLY_TYPE == *'b'* ]]; then
-            tests_bats "$PROJECT_PATH"
-            [ $? -eq 1 ] && error_message 'bats'
+        # Run ansible tests.
+        if [[ -z $TYPE ]] || [[ $TYPE == *'a'* ]]; then
+            ansible_run "$PROJECT_PATH" "$BECOME_PASS"
+            [ $? -eq 1 ] && error_message 'execution' 'ansible' && return 1
+
+            # Execute pytest.
+            pytest_run $project_path
+            [ $? -eq 1 ] && error_message 'execution' 'pytest' && return 1
+            PYTEST_EXECUTED=true
         fi
 
-        # Verify/setup python tests.
-        if [[ $(python_tests_exists "$PROJECT_PATH") == true ]]; then
+        # Run bats tests.
+        if [[ -z $TYPE ]] || [[ $TYPE == *'b'* ]]; then
+            bats_run "$PROJECT_PATH"
+            [ $? -eq 1 ] && error_message 'execution' 'bats' && return 1
+        fi
 
-            if [[ $(validate $PYTHON_EXEC) == true ]]; then
+        # Run molecule tests.
+        if [[ -z $TYPE ]] || [[ $TYPE == *'m'* ]]; then
+            molecule_run "$PROJECT_PATH"
+            [ $? -eq 1 ] && error_message 'execution' 'molecule' && return 1
+        fi
 
-                if [[ $REQUIREMENTS_INSTALL == true ]]; then
-                    setup_python_requirements "$PROJECT_PATH"
+        # Run pytest tests.
+        if [[ (-z $TYPE && $(poetry_exist $PROJECT_PATH) == 'false' &&
+                   $(tox_exist $PROJECT_PATH) == 'false') ||
+                  $TYPE == *'p'* ]]; then
+
+            if [[ $PYTEST_EXECUTED == 'false' ]]; then
+                pytest_run "$PROJECT_PATH"
+                if [ $? -eq 1 ]; then
+                    error_message 'execution' 'pytest' && return 1
                 fi
-
-                # Setup ansible plugins and modules when python or ansible tests.
-                if [[ -z $ONLY_TYPE ]] || [[ $ONLY_TYPE == *'a'* ]] ||
-                    [[ $ONLY_TYPE == *'p'* ]]; then
-
-                    if [[ $(ansible_tests_exists "$PROJECT_PATH") == true ]]; then
-                        setup_ansible_python_plugins "$PROJECT_PATH"
-                        setup_ansible_python_modules "$PROJECT_PATH"
-                    fi
-
-                fi
-
-                # Run ansible tests.
-                if [[ -z $ONLY_TYPE ]] || [[ $ONLY_TYPE == *'a'* ]]; then
-                    tests_ansible "$PROJECT_PATH" "$BECOME_PASS"
-                    [ $? -eq 1 ] && error_message 'ansible'
-                fi
-
-                # Run molecule tests.
-                if [[ -z $ONLY_TYPE ]] || [[ $ONLY_TYPE == *'m'* ]]; then
-                    tests_molecule "$PROJECT_PATH"
-                    [ $? -eq 1 ] && error_message 'molecule'
-                fi
-
-                # Run python tests.
-                if [[ -z $ONLY_TYPE ]] || [[ $ONLY_TYPE == *'p'* ]]; then
-                    tests_python "$PROJECT_PATH"
-                    [ $? -eq 1 ] && error_message 'python'
-                fi
-            
-                [[ $COVERAGE_REPORT == true ]] && coverage_report "$PROJECT_PATH"
-
-            else
-                error_message $PYTHON_EXEC
             fi
 
-        fi # python tests?
+            if [[ $COVERAGE_REPORT == 'true' ]]; then
+                pytest_coverage "$PROJECT_PATH"
+                if [ $? -eq 1 ]; then
+                    error_message 'execution' 'coverage'
+                    return 1
+                fi
+            fi
+
+        # Pytest.
+        fi
+
+        # Run poetry tests.
+        if [[ -z $TYPE ]] || [[ $TYPE == *'y'* ]]; then
+            poetry_run "$PROJECT_PATH"
+            [ $? -eq 1 ] && error_message 'execution' 'poetry' && return 1
+        fi
+
+        # Run tox tests.
+        if [[ (-z $TYPE && $(poetry_exist $PROJECT_PATH) == 'false') ||
+                  $TYPE == *'t'* ]]; then
+            tox_run "$PROJECT_PATH"
+            [ $? -eq 1 ] && error_message 'execution' 'tox' && return 1
+        fi
 
     fi # recursive?
 
-    [[ $TIME == true ]] && show_time $start_time
- 
+    [[ $TIME == 'true' ]] && show_time $start_time
+
     return 0
 }
 
 # @description Determines if molecule tests exists.
+#
+# This function tries:
+# - Search for the molecule directory on $project_path.
 #
 # @arg $1 string Optional project path. Default to current path.
 #
@@ -361,63 +1064,265 @@ function main() {
 # @exitcode 1 on failure.
 #
 # @return true if molecule tests exists, false otherwise.
-function molecule_tests_exists() {
-
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
+function molecule_exist() {
 
     local project_path=$(pwd)
     [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
 
     # Search for molecule tests.
-    ! [[ -d "$project_path/molecule" ]] && echo false && return 0
+    [[ -d "$project_path/molecule" ]] && echo true && return 0
 
-    local pip_list=$($python_exec -m pip list)
-
-    [[ $pip_list == *"molecule"* ]] && echo true && return 0
-
-    echo false && return 0
-
+    echo false
+    return 0
 }
 
-# @description Determines if python related tests exists.
+# @description Execute molecule tests.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function molecule_run() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    if [[ $(molecule_exist $project_path) == 'true' ]]; then
+        molecule_setup
+        [ $? -eq 1 ] && return 1
+
+        local python_exec=$(get_python_exec)
+
+        local current_path=$(pwd)
+        cd $project_path
+        $python_exec -m molecule test
+        cd $current_path
+    fi
+
+    return 0
+}
+
+# @description Setup Molecule tests.
+#
+# @arg noargs.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function molecule_setup() {
+
+    docker_setup
+    [ $? -eq 1 ] && return 1
+
+    install_pip 'flake8'
+    [ $? -eq 1 ] && return 1
+
+    local python_exec=$(get_python_exec)
+    [ $? -eq 1 ] && return 1
+
+    install_pip 'molecule[docker]'
+    [ $? -eq 1 ] && return 1
+
+    return 0
+}
+
+# @description Determines if molecule tests exists.
+#
+# This function tries:
+# - Search for the pyproject.toml file on $project_path.
 #
 # @arg $1 string Optional project path. Default to current path.
 #
 # @exitcode 0 if successful.
 # @exitcode 1 on failure.
 #
-# @return true if python tests exists, false otherwise.
-function python_tests_exists() {
+# @return true if poetry tests exists, false otherwise.
+function poetry_exist() {
 
     local project_path=$(pwd)
     [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
 
-    # Molecule tests.
-    if [[ $(molecule_tests_exists $project_path) == true ]]; then
-        echo true
-        return 0
-    fi
-
-    # Bare metal tests.
-    # Search for plugins.
-    [[ -d $project_path/test_plugins ]] && echo true && return 0
-
-    # Bare metal tests.
-    # Search for modules.
-    [[ -d $project_path/library ]] && echo true && return 0
-
-    # Bare metal tests.
-    # Search for pytest tests.
-    ls $project_path/tests/*.py &>/dev/null
-    [ $? -eq 0 ] && echo true && return 0
-
-    # Bare metal tests.
-    # Search the playbook ./tests/test-playbook.yml.
-    ls $project_path/tests/test-playbook.yml &>/dev/null
-    [ $? -eq 0 ] && echo true && return 0
+    # Search for pyproject.toml file.
+    [[ -f $project_path/pyproject.toml ]] && echo true && return 0
 
     echo false && return 0
+}
+
+# @description Execute Poetry tests.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function poetry_run() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    local test_path=$(get_test_path $project_path)
+
+    if [[ $(poetry_exist $project_path) == 'true' ]]; then
+
+        poetry_setup
+        [ $? -eq 1 ] && return 1
+
+        local python_exec=$(get_python_exec)
+
+        local current_path=$(pwd)
+        cd $project_path
+
+        $python_exec -m poetry install
+
+        if [[ $(cat $project_path/pyproject.toml) == *'tox'* ]]; then
+            $python_exec -m poetry run tox $test_path/*.py
+        else
+            $python_exec -m poetry run pytest $test_path/*.py
+        fi
+
+        cd $current_path
+
+    fi
+
+    return 0
+
+}
+
+# @description Setup Poetry tests.
+#
+# @arg noargs.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function poetry_setup() {
+    install_pip 'poetry'
+    [ $? -eq 1 ] && return 1
+    return 0
+}
+
+# @description Generates coverage report using pytest (bare metal).
+#
+# Creates a .coverage file and a htmlcov folder.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+#
+# @stdout .coverage file, htmlcov folder.
+function pytest_coverage() {
+
+    install_pip 'coverage'
+    [ $? -eq 1 ] && return 1
+
+    install_pip 'pytest-cov'
+    [ $? -eq 1 ] && return 1
+
+    install_pip 'python-coveralls'
+    [ $? -eq 1 ] && return 1
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    local test_path=$(get_test_path $project_path)
+
+    # Check if bare metal tests exists.
+    local ls_result=$(ls $test_path)
+    ! [[ $ls_result == *'.py'* ]] && return 1
+
+    local python_exec=$(get_python_exec)
+
+    local current_path=$(pwd)
+    cd $project_path
+    $python_exec -m coverage run --omit */*-packages/* -m pytest $test_path/*.py
+    $python_exec -m coverage html
+    cd $current_path
+    return 0
+
+}
+
+# @description Determines if pytest tests exists.
+#
+# This function tries:
+# - Search python files on $test_path.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+#
+# @return true if pytest tests exists, false otherwise.
+function pytest_exist() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    local test_path=$(get_test_path $project_path)
+    ! [[ -d $test_path ]] && echo false && return 1
+
+    # Search for pytest (bare metal) tests.
+    local ls_result=$(ls $test_path)
+    [[ $ls_result == *'.py'* ]] && echo true && return 0
+
+    echo false && return 0
+
+}
+
+# @description Execute pytest tests.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function pytest_run() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    if [[ $(pytest_exist $project_path) == 'true' ]]; then
+
+        pytest_setup $project_path
+        [ $? -eq 1 ] && return 1
+
+        local test_path=$(get_test_path $project_path)
+
+        local python_exec=$(get_python_exec)
+
+        $python_exec -m pytest $test_path/*.py
+
+    fi
+
+    return 0
+
+}
+
+# @description Setup pytest tests.
+#
+# @arg $1 string Optional project path. Default to current_path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function pytest_setup() {
+
+    install_pip 'pytest'
+    [ $? -eq 1 ] && return 1
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    # Install requirements.txt files if exits.
+    install_pip $project_path
+
+    # Run package setup.
+    if [[ -f $project_path/setup.py ]]; then
+        local python_exec=$(get_python_exec)
+        local current_path=$(pwd)
+        cd $project_path
+        $python_exec setup.py install
+        cd $current_path
+    fi
+
+    [ $? -eq 1 ] && return 1
+
+    return 0
 
 }
 
@@ -425,153 +1330,36 @@ function python_tests_exists() {
 #
 # The applied operations are:
 #
-# - Trim.
+#  - Trim.
+#  - Remove unnecesary slashes.
 #
 # @arg $1 string Text to sanitize.
 #
-# @exitcode 0 if successful.
-# @exitcode 1 on failure.
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
 #
 # @stdout Sanitized input.
 function sanitize() {
     [[ -z $1 ]] && echo '' && return 0
     local sanitized="$1"
+
     # Trim.
-    sanitized="${sanitized## }"
-    sanitized="${sanitized%% }"
-    echo "$sanitized"
-    return 0
-}
+    sanitized=$(trim "$sanitized")
 
-# @description Create symbolic links for modules.
-#
-# The modules on the following paths are linked:
-#
-#  - ./library
-#
-# To the locations:
-#
-#  - ./tests/library
-#
-# For each for .py file found, a soft link will be created.
-#
-# @arg $1 string Optional project path. Default to current path.
-#
-# @exitcode 0 if successful.
-# @exitcode 1 on failure.
-function setup_ansible_python_modules() {
+    # Remove double and triple slashes.
+    # Extract the protocol URL part (http:// or https://) (if exists).
+    protocol="$(echo $sanitized | grep :// | sed -e's,^\(.*://\).*,\1,g')"
 
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
+    # Remove the protocol.
+    sanitized="${sanitized/${protocol}/}"
 
-    [[ $(validate $python_exec) == false ]] && return 1
+    # Remove unnecesary slashes.
+    sanitized=$(echo "$sanitized" | tr -s /)
 
-    local project_path=$(pwd)
-    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+    # Readd the protocol (if exists).
+    sanitized=${protocol}${sanitized}
 
-    ls $project_path/library/*.py &>/dev/null
-    if [ $? -eq 0 ]; then
-
-        if ! [[ -d $project_path/tests/library ]]; then
-            ln -s $project_path/library $project_path/tests/library
-        fi
-
-        # Once we know .py files exists, list again and store the listings.
-        local module_list=$(ls $project_path/library/*.py)
-
-        for module_item in $module_list; do
-            $python_exec -m py_compile $module_item
-        done
-    fi
-    return 0
-
-}
-
-# @description Create symbolic links for plugins.
-#
-# The plugins on the following paths are linked:
-#
-# - ./test_plugins
-#
-# To the locations:
-#
-# - ./tests/test_plugins
-#
-# For each for .py file found, a soft link will be created.
-#
-# @arg $1 string Optional project path. Default to current path.
-#
-# @exitcode 0 if successful.
-# @exitcode 1 on failure.
-function setup_ansible_python_plugins() {
-
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
-
-    [[ $(validate $python_exec) == false ]] && return 1
-
-    local project_path=$(pwd)
-    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
-
-    ls $project_path/test_plugins/*.py &>/dev/null
-    if [ $? -eq 0 ]; then
-
-        if ! [[ -d $project_path/tests/test_plugins ]]; then
-            ln -fs $project_path/test_plugins $project_path/tests/test_plugins
-        fi
-
-        # Once we know .py files exists, list again and store the listings.
-        local plugin_list=$(ls $project_path/test_plugins/*.py)
- 
-        for plugin_item in $plugin_list; do
-            $python_exec -m py_compile $plugin_item
-        done
-    fi
-    return 0
-
-}
-
-# @description Install requirement files.
-#
-# This function installs all requirements*.txt files found on
-# project's root directory and if exists on docs/requirements.txt.
-#
-# @arg $1 string Optional project path. Default to current path.
-#
-# @exitcode 0 if successful.
-# @exitcode 1 on failure.
-function setup_python_requirements() {
-
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
-
-    [[ $(validate $python_exec) == false ]] && return 1
-
-    local project_path=$(pwd)
-    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
-
-    ls $project_path/requirements*.txt &>/dev/null
-
-    if [ $? -eq 0 ]; then
-
-        local requirement_list=$(ls $project_path/requirements*.txt)
-
-        local packages_list=''
-
-        # Traverse all requirements files, i.e.:
-        # requirements.txt, requirements-dev.txt.
-        for requirement_item in $requirement_list; do
-            $python_exec -m pip install -r $requirement_item
-        done
-
-    fi
-
-    # Verify if a docs/requirements.txt file exists.
-    if [[ -f $project_path/docs/requirements.txt ]]; then
-        $python_exec -m pip install -r $project_path/docs/requirements.txt
-    fi
-
-    return 0
+    echo "$sanitized" && return 0
 }
 
 # @description Shows the time the test took on stdout.
@@ -579,7 +1367,7 @@ function setup_python_requirements() {
 # This function uses the global variable PROJECT_PATH
 # as the project folder whose time is being measured.
 #
-# If the PROJECT_PATH variable is not defined the current
+# If the PROJECT_PATH variable is not defined, the current
 # path will be used as project path.
 #
 # @arg $1 string Initial time, if no initial time parameter passed,
@@ -595,11 +1383,12 @@ function show_time() {
     local project_path=$(pwd)
     ! [[ -z $PROJECT_PATH ]] && project_path="$PROJECT_PATH"
 
-    [[ $RECURSIVE == true ]] && [[ -f $PROJECT_PATH/.testignore ]] && return 0
+    [[ $RECURSIVE == 'true' ]] &&
+        [[ -f $PROJECT_PATH/.testignore ]] && return 0
 
     echo "PROJECT: $PROJECT_PATH"
     echo '
-============================================================================='
+==========================================================================='
     echo "$((($(date +%s)-$start_time)/60)) min."
     echo '
      .-"~~~-.        ----------------- ---- ----       ---- ----------
@@ -611,159 +1400,449 @@ function show_time() {
     ,"  ; ~~--"~           |  |        |  | | | \    /  | | |  ----
     ;  ;                   |  |        |  | | |  ----   | | |  |
 _\\;_\\//__________________|  |________|  |_| |_________| |_|  -------|
-==------===========--------========----======-------------===--------========'
+==------===========--------========----======-------------===--------======'
 
     return 0
 }
 
-# @description Execute ansible tests.
+# @description Sanitize input.
 #
-# @arg $1 string Optional project path. Default to current path.
-# @arg $2 string Optional become password.
+# The applied operations are:
+#
+#  - Trim.
+#  - Remove unnecesary slashes.
+#
+# @arg $1 string Text to sanitize.
+#
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
+#
+# @stdout Sanitized input.
+function sanitize() {
+    [[ -z $1 ]] && echo '' && return 0
+    local sanitized="$1"
+
+    # Trim.
+    sanitized=$(trim "$sanitized")
+
+    # Remove double and triple slashes.
+    # Extract the protocol URL part (http:// or https://) (if exists).
+    protocol="$(echo $sanitized | grep :// | sed -e's,^\(.*://\).*,\1,g')"
+
+    # Remove the protocol.
+    sanitized="${sanitized/${protocol}/}"
+
+    # Remove unnecesary slashes.
+    sanitized=$(echo "$sanitized" | tr -s /)
+
+    # Readd the protocol (if exists).
+    sanitized=${protocol}${sanitized}
+
+    echo "$sanitized"
+    return 0
+}
+
+# @description Determines if tox tests exists.
+#
+# This function tries:
+# - Search for the $project_path/tox.ini file on $project_path.
+#
+# @arg $1 string Optional project path. Default to current_path.
 #
 # @exitcode 0 if successful.
 # @exitcode 1 on failure.
-function tests_ansible() {
-
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
-
-    [[ $(validate $python_exec) == false ]] && return 1
+#
+# @return true if pytest tests exists, false otherwise.
+function tox_exist() {
 
     local project_path=$(pwd)
     [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
 
-    ! [[ -d $project_path/tests ]] && return 0
+    # Search for tox.ini file.
+    [[ -f $project_path/tox.ini ]] && echo true && return 0
 
-    local become_parameter=''
-    ! [[ -z $2 ]] && become_parameter="ansible_become_pass: '$2', "
+    echo false && return 0
 
-    if [[ $(ansible_tests_exists "$PROJECT_PATH") == true ]]; then
-        [[ $(validate 'ansible') == false ]] && return 1
+}
+
+# @description Execute tox tests.
+#
+# @arg $1 string Optional project path. Default to current path.
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function tox_run() {
+
+    local project_path=$(pwd)
+    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+
+    if [[ $(tox_exist $project_path) == 'true' ]]; then
+
+        tox_setup
+        [ $? -eq 1 ] && return 1
+
+        local python_exec=$(get_python_exec)
+
+        local current_path=$(pwd)
+        cd $project_path
+        $python_exec -m tox
+        cd $current_path
+
     fi
 
-    local yml_files=''
+    return 0
 
-    ls $project_path/tests/*.yml &>/dev/null
-    [ $? -eq 0 ] && yml_files=$(ls $project_path/tests/*.yml)
+}
 
-    ls $project_path/tests/*.yaml &>/dev/null
-    [ $? -eq 0 ] && yml_files="$yml_files $(ls $project_path/tests/*.yaml)"
+# @description Setup tox tests.
+#
+# @noargs
+#
+# @exitcode 0 if successful.
+# @exitcode 1 on failure.
+function tox_setup() {
+    install_pip 'tox'
+    [ $? -eq 1 ] && return 1
+    return 0
+}
 
-    # Bare metal tests, using test playbook files.
-    # roles must be preinstalled with: ansible-galaxy install.
-    for playbook in $yml_files; do
+# @description Trim whitespace at the beggining and end of a string.
+#
+# @arg $1 string Text where to apply trim.
+#
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
+#
+# @stdout Trimmed input.
+function trim() {
 
-        if ! [[ -f $project_path/tests/inventory ]]; then
-            echo 'localhost' > $project_path/tests/inventory
+    [[ -z $1 ]] && return 1
+    local trimmed="$1"
+
+    # Strip leading spaces.
+    while [[ $trimmed == ' '* ]]; do
+       trimmed="${trimmed## }"
+    done
+    # Strip trailing spaces.
+    while [[ $trimmed == *' ' ]]; do
+        trimmed="${trimmed%% }"
+    done
+
+    echo "$trimmed" && return 0
+}
+
+# @description Uninstalls packages via apt.
+#
+# The packages must be space-separated: 'gedit hello pencil3d'
+#
+# @arg $1 string package name or list of packages to uninstall.
+#
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
+function uninstall_apt() {
+
+    [[ -z $1 ]] && return 1
+
+    local package_array=($(echo $1 | tr " " "\n"))
+
+    for package_name in ${package_array[@]}; do
+
+        # If installed.
+        if [[ $(validate_apt "$package_name") == 'true' ]]; then
+
+            # If can uninstall.
+            if [[ $(validate 'install') == 'true' ]]; then
+
+                echo "Uninstalling $package_name ..."
+                
+                sudo apt purge -y "$package_name"
+                sudo apt update
+                sudo apt autoremove -y
+
+            else
+                error_message 'custom' "Can't uninstall ${package_name}."
+                return 1
+            fi
+
         fi
 
-        ansible-playbook -i $project_path/tests/inventory $playbook -e \
-            "{${ansible_become_pass}ansible_python_interpreter: '/usr/bin/$python_exec'}"
-
-        # Clear history for security.
-        history -c
     done
 
     return 0
-
 }
 
-# @description Execute bats tests.
+# @description Uninstalls Python packages via pip.
 #
-# @arg $1 string Optional project path. Default to current path.
+# This function ensures that Python, Pip and Setuptools are installed
+# and then installs all required packages.
 #
-# @exitcode 0 if successful.
+# You can pass to this function:
+# - A filepath to a requirements*.txt file to be uninstalled.
+# - A path to directory containing requirements*.txt files to uninstall.
+# - A single package name.
+#
+# If this function is called without passing any argument to it,
+# it will search for requirements*.txt files on the current directory.
+#
+# This function expects that each requirements filename has the text
+# 'requirements' included on it.
+#
+# Each package will be checked to see if its installed, if installed
+# then this function proceeds to uninstall it.
+#
+# @arg $1 string Optional filepath, path to dir or single package name.
+#
+# @exitcode 0 on success.
 # @exitcode 1 on failure.
-function tests_bats() {
+function uninstall_pip() {
 
-    local project_path=$(pwd)
-    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+    # Ensure requirements are installed.
+    install_pip
+    [ $? -eq 1 ] && return 1
 
-    local project=$(basename $project_path)
+    local python_exec=$(get_python_exec)
 
-    ls $project_path/tests/*.bats &>/dev/null
-    [ $? -eq 1 ] && return 0
+    # Path to where requirement files resides.
+    local base_path=''
+    local file_name=''
 
-    [[ $(validate 'bats') == false ]] && return 1
-    [[ -d $project_path/tests ]] && bats $project_path/tests
+    local requirement_list=''
 
-    return 0
-}
+    # Check if single file.
+    if ! [[ -z $1 ]] && [[ -f $1 ]]; then
+        requirement_list=$1
+        base_path=$(dirname $1)
 
-# @description Execute molecule tests.
-#
-# @arg $1 string Optional project path. Default to current path.
-#
-# @exitcode 0 if successful.
-# @exitcode 1 on failure.
-function tests_molecule() {
+    # Check if directory.
+    elif ! [[ -z $1 ]] && [[ -d $1 ]]; then
+        requirement_list=$(ls $1)
+        base_path=$1
 
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
+    # Single package, uninstall it.
+    elif ! [[ -z $1 ]]; then
 
-    [[ $(validate $python_exec) == false ]] && return 1
+        if [[ $(validate_pip "$1") == 'true' ]]; then
+            $python_exec -m pip uninstall -y $1
+        fi
 
-    local project_path=$(pwd)
-    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
+        return 0
+    fi
 
-    # Molecule tests.
-    if [[ $(molecule_tests_exists $project_path) == true ]]; then
-        local current_path=$(pwd)
-        cd $project_path
-        $python_exec -m molecule test
-        cd $current_path
+    # If at least one requirement file exists.
+    if [[ "$requirement_list" =~ .*requirements.*.txt ]]; then
+
+        # Traverse all requirements files, i.e.:
+        # requirements.txt, requirements-dev.txt.
+        for requirement_file in $requirement_list; do
+
+            if [[ "$requirement_file" == *'requirements'* ]]; then
+
+                file_name=$(basename $requirement_file)
+
+                # Copy file and add a newline to it to overcome bash limit.
+                cp -f $base_path/$file_name reqs-current-tmp.txt
+                echo '' >> reqs-current-tmp.txt
+
+                # Traverse current requirements file checking item by
+                # item if is installed or not.
+                while read LINE
+                do
+                    # If installed, uninstall it.
+                    if ! [[ -z $LINE ]] &&
+                            [[ $(validate_pip "$LINE") == 'true' ]];
+                    then
+                        $python_exec -m pip uninstall -y $LINE
+                    fi
+
+                    # Traverse requirement items (item by item).
+                done < reqs-current-tmp.txt
+                rm reqs-current-tmp.txt
+
+            fi
+
+        # Traverse requirements files (file by file).
+        done
     fi
     return 0
-}
-
-
-# @description Execute python tests.
-#
-# @arg $1 string Optional project path. Default to current path.
-#
-# @exitcode 0 if successful.
-# @exitcode 1 on failure.
-function tests_python() {
-
-    local python_exec='python'
-    ! [[ -z $PYTHON_EXEC ]] && python_exec=$PYTHON_EXEC
-
-    [[ $(validate $python_exec) == false ]] && return 1
-
-    local project_path=$(pwd)
-    [[ -d $1 ]] && project_path="$( cd "$1" ; pwd -P )"
-
-    ls $project_path/tests/test*.py &>/dev/null
-    if [ $? -eq 0 ]; then
-        local current_path=$(pwd)
-        cd $project_path
-        $python_exec -m pytest --ignore molecule
-        cd $current_path
-    fi
-    return 0
-
 }
 
 # @description Apply validations.
 #
-# The applied validations are:
+# The validation categories are:
+# - install: Verifies if current user can install/uninstall via apt.
+# - sudo: Verifies if current user can obtain administrative permissions.
+# - package-name: Verifies if specific package is installed via apt or pip.
 #
-#  - Verify if a system package is installed.
+# This function assumes that everything that is not the word 'sudo',
+# is a package name.
 #
-# @arg $1 string Name of the package to check.
+# @arg $1 string The word 'sudo' or a package name.
 #
-# @exitcode 0 if valid.
-# @exitcode 1 if invalid or on failure.
+# @exitcode 0 If successful.
+# @exitcode 1 On failure.
 #
-# @return true if the validations passed, false otherwise.
+# @stdout '<program-name> not installed' when <program> is not installed.
 function validate() {
 
+    [[ -z $1 ]] && return 1
+    local validation_name=$(sanitize "$1")
+
+    case $validation_name in
+
+        # Validate if the user can install/uninstall requirement via apt.
+        install)
+            # Verify if install requirements enabled.
+            if [[ $INSTALL_REQUIREMENT == 'true' ]]; then
+                [[ $(validate 'sudo') == 'true' ]] && echo true && return 0
+            fi
+            ;;
+
+        # Validate permissions.
+        sudo)
+            # Verify if current user is root.
+            local current_username=$(whoami)
+            [[ "$current_username" == 'root' ]] && echo true && return 0
+
+            # Verify if sudo is installed.
+            if [[ $(validate_apt 'sudo') == 'false' ]]; then
+                echo false && return 0
+            fi
+
+            # Verify if the current user belongs to groups 'sudo' or 'root'.
+            local current_user_groups=$(groups $current_username)
+            if [[ $current_user_groups == *'root'* ]] ||
+                   [[ $current_user_groups == *'sudo'* ]]; then
+                echo true && return 0
+            fi
+
+            # Verify if file /etc/sudoers.d/username exists.
+            if [[ -f /etc/sudoers.d/$current_username ]]; then
+                echo true && return 0
+            fi
+            ;;
+
+        # Validate packages are installed.
+        *)
+
+            if [[ $(validate_apt "$validation_name") == 'true' ]];
+            then
+                echo true && return 0
+            fi
+
+            if [[ $(validate_pip "$validation_name") == 'true' ]];
+            then
+                echo true && return 0
+            fi
+            ;;
+    esac
+
+    echo false && return 0
+}
+
+# @description Determines if a package is installed via Apt.
+#
+# @arg $1 string The package name.
+#
+# @exitcode 0 on sucess.
+# @exitcode 1 on failure.
+#
+# @stdout true if installed via apt, false otherwise.
+function validate_apt() {
+
     [[ -z $1 ]] && echo false && return 1
+    local package_name=$(sanitize "$1")
 
-    [[ -z $(which $1) ]] && echo false && return 1
+    # Verify if the package is installed via apt with apt-cache policy.
+    local apt_cache_policy=$(apt-cache policy "$package_name" | head -n 2 | tail -n 1)
 
-    echo true && return 0
+    # Verify if a (none), (ninguno), etc text don't exists.
+    if ! [[ -z $apt_cache_policy ]] &&
+            ! [[ "$apt_cache_policy" =~ .*\(.*\).* ]]; then
+        echo true && return 0
+    fi
+
+    echo false && return 0
+}
+
+# @description Determines if a package is installed via pip.
+#
+# @arg $1 string The package name.
+#
+# @exitcode 0 on sucess.
+# @exitcode 1 on failure.
+#
+# @stdout true if installed via pip, false otherwise.
+function validate_pip() {
+
+    [[ -z $1 ]] && echo false && return 1
+    local package_name=$(sanitize "$1")
+
+    # Verify python is installed.
+    local python_exec=$(get_python_exec)
+    [[ -z $python_exec ]] && echo false && return 1
+
+    # Remove package version.
+    # Set lowercase.
+    package_name="${package_name,,}"
+
+    # Remove from '=' to end.
+    package_name="${package_name%=*}"
+
+    # Remove from '>' to end.
+    package_name="${package_name%>*}"
+
+    # Remove from '<' to end.
+    package_name="${package_name%<*}"
+
+    # Check if the package to validate is pip itself.
+    if [[ "$package_name" == "${python_exec}-pip" ]] ||
+           [[ "$package_name" == 'pip' ]] ||
+           [[ "$package_name" == 'pip3' ]]; then
+        [[ $(validate_pip_installed) == 'true' ]] && echo true && return 0
+        echo false && return 0
+    fi
+
+    # Verify pip is installed.
+    if [[ $(validate_pip_installed) == 'false' ]]; then
+        echo false && return 1
+    fi
+
+    # Get pip installed packages.
+    local pip_list=$($python_exec -m pip list)
+
+    # Set lowercase.
+    pip_list="${pip_list,,}"
+
+    # Replace '-' with '_'.
+    pip_list="${pip_list//-/_}"
+    package_name="${package_name//-/_}"
+
+    # Add one space to prevent not finding the last package.
+    pip_list="$pip_list "
+
+    # Verify if package installed via pip.
+    [[ $pip_list == *"$package_name "* ]] && echo true && return 0
+
+    echo false && return 0
+}
+
+# @description Verifies if pip is installed.
+#
+# @noargs
+#
+# @exitcode 0 on success.
+# @exitcode 1 on failure.
+#
+# @stdout true if installed, false otherwise.
+function validate_pip_installed() {
+    local python_exec=$(get_python_exec)
+    [[ -z $python_exec ]] && echo false && return 1
+    if [[ $(validate_apt "${python_exec}-pip") == 'true' ]]; then
+        echo true && return 0
+    fi
+    $python_exec -m pip --version &>/dev/null
+    [ $? -eq 0 ] && echo true && return 0
+    echo false && return 0
 }
 
 # Avoid running the main function if we are sourcing this file.

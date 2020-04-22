@@ -1,4 +1,3 @@
-[submodule "docs/source/parts"]
-	path = docs/source/parts
-	url = https://gitlab.com/constrict0r/parts.git
-	branch = master
+[submodule "doc/source/part"]
+	path = doc/source/part
+	url = https://gitlab.com/constrict0r/part.git

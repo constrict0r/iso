@@ -2,8 +2,8 @@ Root user password.
 
 This variable answer to the following step of the Debian Installer:
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_03_root.png
-   :alt: di_03_root
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_04_root.png
+   :alt: di_04_root
 
 Defaults to *debian*.
 

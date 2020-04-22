@@ -4,11 +4,11 @@ Use this role to generate a *remaster.iso* image (replace with your data):
 
 .. code-block:: bash
 
-  ansible localhost -m include_role -a name=constrict0r.iso -K -e \
-      'username=constrict0r userpass=1234 rootpass=1234 device=sda preseed=true \
-      preseed_wireless=true preseed_partitioning=true preseed_last_question=true \
-      preseed_custom=/home/constrict0r/Documentos/madvillain.yml networkname="MY NETWORK" \
-      networkpass="my-network-pass" hostname="latveria" domain="amanita"'
+ ansible localhost -m include_role -a name=constrict0r.iso -K -e \
+     'username=constrict0r userpass=1234 rootpass=1234 device=sda preseed=true \
+     preseed_wireless=true preseed_partitioning=true preseed_last_question=true \
+     preseed_custom=/home/constrict0r/Documentos/madvillain.yml networkname="MY NETWORK" \
+     networkpass="my-network-pass" hostname="latveria" domain="amanita"'
 
 Open Virt Manager and click on the *New Virtual Machine* icon (the tiny computer):
 

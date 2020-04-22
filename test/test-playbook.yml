@@ -16,7 +16,7 @@
 
   - name: Download netinstall iso file.
     get_url:
-      url: https://is.gd/1XtKpF
+      url: https://is.gd/99FVKJ
       dest: /tmp/debian-amd64-netinst.iso
     delegate_to: localhost
 

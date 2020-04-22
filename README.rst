@@ -14,8 +14,8 @@ without `preseeding
 
 Full documentation on `Readthedocs <https://iso.readthedocs.io>`_.
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/iso.png
-   :alt: iso
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/avatar.png
+   :alt: avatar
 
 Source code on:
 
@@ -23,15 +23,15 @@ Source code on:
 
 `Gitlab <https://gitlab.com/constrict0r/iso>`_.
 
-`Part of: <https://gitlab.com/explore/projects?tag=doombots>`_
+`Part of: <https://gitlab.com/explore/projects?tag=doombot>`_
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/doombots.png
-   :alt: doombots
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/doombot.png
+   :alt: doombot
 
 **Ingredients**
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/ingredients.png
-   :alt: ingredients
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/ingredient.png
+   :alt: ingredient
 
 
 Contents
@@ -79,7 +79,7 @@ Contents
    * `Cleanup <#cleanup>`_
    * `Initrd <#initrd>`_
    * `Initrd-Partitioning <#initrd-partitioning>`_
-   * `Initrd-Set-Answers <#initrd-set-answers>`_
+   * `Initrd-Set-Answer <#initrd-set-answer>`_
    * `Menu <#menu>`_
    * `Preseed <#preseed>`_
    * `Remaster <#remaster>`_
@@ -104,6 +104,7 @@ the newly installed system.
 When using preseeding and on the first screen that the Debian
 Installer shows, you will have to wait a couple of seconds (about 5)
 for the process to autostart.
+
 
 
 Usage
@@ -159,55 +160,48 @@ Usage
         vars:
           username: [mary]
 
-* To use a USB stick to install a physical computer, use this role to
-   generate a *remaster.iso* image (run next command replacing with
-   your data):
+* To use a USB stick to install a physical computer:
 
-..
+Use this role to generate a *remaster.iso* image (replace with your
+data):
 
-   ::
+::
 
-      ansible localhost -m include_role -a name=constrict0r.iso -K -e \
-          'username=constrict0r userpass=1234 rootpass=1234 device=sda \
-          preseed=true preseed_wireless=true preseed_partitioning=true \
-          preseed_last_question=true \
-          preseed_custom=/home/constrict0r/Documentos/madvillain.yml \
-          networkname="MY NETWORK" networkpass="my-network-pass" \
-          hostname="latveria" domain="amanita" \
-          firmware_path=/home/constrict0r/Instaladores/firmware/'
+   ansible localhost -m include_role -a name=constrict0r.iso -K -e \
+       'username=constrict0r userpass=1234 rootpass=1234 device=sda \
+       preseed=true preseed_wireless=true preseed_partitioning=true \
+       preseed_last_question=true \
+       preseed_custom=/home/constrict0r/Documentos/madvillain.yml \
+       networkname="MY NETWORK" networkpass="my-network-pass" \
+       hostname="latveria" domain="amanita" \
+       firmware_path=/home/constrict0r/Instaladores/firmware/'
 
 * Then use `dd <http://man7.org/linux/man-pages/man1/dd.1.html>`_ to
    copy the file to your USB stick (replacing *sdx* with your drive):
 
-..
+::
 
-   ::
-
-      su -c 'dd if=/path/to/remaster.iso of=/dev/sdx
+   su -c 'dd if=/path/to/remaster.iso of=/dev/sdx'
 
 * Some modern computer complaints about a **cdrom not detected**
    during the installation process (because they no longer include
    cdroms), to overpass this issue, rename the extension *.iso* to
    *.img* and use **dd** to copy the file:
 
-..
+::
 
-   ::
+   mv remaster.iso remaster.img
+   su -c 'dd if=/path/to/remaster.img of=/dev/sdx'
 
-      mv remaster.iso remaster.img
-      su -c 'dd if=/path/to/remaster.img of=/dev/sdx
+To run tests:
 
-* To run tests:
+::
 
-..
+   cd iso
+   chmod +x testme.sh
+   ./testme.sh
 
-   ::
-
-      cd iso
-      chmod +x testme.sh
-      ./testme.sh
-
-   On some tests you may need to use *sudo* to succeed.
+On some tests you may need to use *sudo* to succeed.
 
 * To use with `Virt Manager <https://virt-manager.org>`_:
 
@@ -258,6 +252,7 @@ network you want to use and press *Finish*:
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/vm_05_final.png
    :alt: vm_05_final
+
 
 
 Variables
@@ -1009,8 +1004,8 @@ Root user password.
 
 This variable answer to the following step of the Debian Installer:
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_03_root.png
-   :alt: di_03_root
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_04_root.png
+   :alt: di_04_root
 
 Defaults to *debian*.
 
@@ -1041,8 +1036,8 @@ Non-root username.
 
 This variable answer to the following step of the Debian Installer:
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_02_username.png
-   :alt: di_02_username
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/di_05_username.png
+   :alt: di_05_username
 
 Defaults to *debian*.
 
@@ -1159,6 +1154,7 @@ Defaults to *sda*.
        "device=hda"
 
 
+
 Requirements
 ************
 
@@ -1183,6 +1179,7 @@ If you want to run the tests, you will also need:
 * `Setuptools <https://pypi.org/project/setuptools/>`_.
 
 
+
 Compatibility
 *************
 
@@ -1193,6 +1190,7 @@ Compatibility
 * `Debian Stretch <https://wiki.debian.org/DebianStretch>`_.
 
 * `Ubuntu Xenial <http://releases.ubuntu.com/16.04/>`_.
+
 
 
 Limitations
@@ -1247,10 +1245,12 @@ Limitations
 * This role does not support vault values.
 
 
+
 License
 *******
 
 MIT. See the LICENSE file for more details.
+
 
 
 Links
@@ -1265,6 +1265,7 @@ Links
 * `Travis CI <https://travis-ci.com/constrict0r/iso>`_.
 
 
+
 UML
 ***
 
@@ -1274,8 +1275,8 @@ Deployment
 
 The full project structure is shown below:
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/deployment.png
-   :alt: deployment
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/deploy.png
+   :alt: deploy
 
 
 Main
@@ -1314,13 +1315,13 @@ The process to modify the *initrd.gz* file is shown below:
    :alt: initrd_partitioning
 
 
-Initrd-Set-Answers
-==================
+Initrd-Set-Answer
+=================
 
 The process to preseed the answers for the Installer is shown below:
 
-.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/initrd_set_answers.png
-   :alt: initrd_set_answers
+.. image:: https://gitlab.com/constrict0r/img/raw/master/iso/initrd_set_answer.png
+   :alt: initrd_set_answer
 
 
 Menu
@@ -1377,6 +1378,7 @@ The process of variable copying is shown below:
    :alt: variables
 
 
+
 Author
 ******
 
@@ -1389,4 +1391,5 @@ Enjoy!!!
 
 .. image:: https://gitlab.com/constrict0r/img/raw/master/iso/enjoy.png
    :alt: enjoy
+
 

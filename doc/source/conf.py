@@ -58,28 +58,25 @@ readthedocs_link = "`Readthedocs <" + readthedocs_url + ">`_."
 global_substitutions = {
     "AUTHOR_IMG": author_img,
     "AUTHOR_SLOGAN": author_slogan,
+    "AVATAR_IMG": ".. image:: " + img_url + "avatar.png\n   :alt: avatar",
     "CLEANUP_IMG": ".. image:: " + img_url +
     "/cleanup.png\n   :alt: cleanup",
-    "AVATAR_IMG": ".. image:: " + img_url + project + ".png\n   :alt: "
-    + project,
     "DEFAULT_VAR_NAME": 'username',
-    "DEPLOYMENT_IMG": ".. image:: " + img_url +
-    "/deployment.png\n   :alt: deployment",
-    "DOOMBOTS_IMG": ".. image:: " + img_url +
-    "/doombots.png\n   :alt: doombots",
+    "DEPLOY_IMG": ".. image:: " + img_url + "/deploy.png\n   :alt: deploy",
+    "DOOMBOT_IMG": ".. image:: " + img_url + "/doombot.png\n   :alt: doombot",
     "ENJOY_IMG": ".. image:: " + img_url + "/enjoy.png\n   :alt: enjoy",
     "GITLAB_BADGE":  ".. image:: " + gitlab_badge,
     "GITLAB_CI_LINK":  gitlab_ci_link,
     "GITHUB_LINK":  github_link,
     "GITLAB_LINK":  gitlab_link,
-    "INGREDIENTS_IMG": ".. image:: " + img_url +
-    "/ingredients.png\n   :alt: ingredients",
+    "INGREDIENT_IMG": ".. image:: " + img_url +
+    "/ingredient.png\n   :alt: ingredient",
     "INITRD_IMG": ".. image:: " + img_url +
     "/initrd.png\n   :alt: initrd",
     "INITRD_PARTITIONING_IMG": ".. image:: " + img_url +
     "/initrd_partitioning.png\n   :alt: initrd_partitioning",
-    "INITRD_SET_ANSWERS_IMG": ".. image:: " + img_url +
-    "/initrd_set_answers.png\n   :alt: initrd_set_answers",
+    "INITRD_SET_ANSWER_IMG": ".. image:: " + img_url +
+    "/initrd_set_answer.png\n   :alt: initrd_set_answer",
     "MAIN_IMG": ".. image:: " + img_url +
     "/main.png\n   :alt: main",
     "MENU_IMG": ".. image:: " + img_url +

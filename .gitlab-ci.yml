@@ -1,0 +1,11 @@
+---
+stages:
+  - test
+
+bare:
+  image: debian:latest
+  stage: test
+  before_script:
+    - chmod +x testme.sh
+  script:
+    - ./testme.sh -i -k
