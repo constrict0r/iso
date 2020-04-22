@@ -6,6 +6,8 @@ bare:
   image: debian:latest
   stage: test
   before_script:
+    - apt install -y ansible
+    - ansible-galaxy install constrict0r.iso
     - chmod +x testme.sh
   script:
     - ./testme.sh -i -k

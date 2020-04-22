@@ -14,8 +14,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Install ansible.
+      run: sudo bash -c 'apt instal -y ansible'
+
+    - name: Install requirement role.
+      run: sudo bash -c 'ansible-galaxy install constrict0r.iso'
+
     - name: Add execution permissions to testme.sh.
       run: chmod +x testme.sh
 
     - name: Execute tests.
-      run: sudo /bin/bash -H -c './testme.sh -i -k'
+      run: sudo bash -H -c './testme.sh -i -k'

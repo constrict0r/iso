@@ -14,6 +14,8 @@ jobs:
       dist: xenial
 
 before_script:
+  - sudo bash -c 'apt install -y ansible'
+  - sudo bash -c 'ansible-galaxy install constrict0r.iso'
   - chmod +x testme.sh
 
 script:
