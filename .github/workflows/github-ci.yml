@@ -14,6 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Update apt.
+      run: sudo bash -c 'apt update'
+
     - name: Install ansible.
       run: sudo bash -c 'apt instal -y ansible'
 
