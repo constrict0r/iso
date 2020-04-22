@@ -105,3 +105,4 @@ substitutions = [
     ("|DEFAULT_VAR_VALUE|", '[mary]'),
     ("|PROJECT|", project)
 ]
+
