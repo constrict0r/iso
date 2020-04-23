@@ -17,6 +17,9 @@ jobs:
     - name: Update apt.
       run: sudo bash -c 'apt update'
 
+    - name: Install python requests.
+      run: sudo bash -c 'python3 -m pip install requests'
+
     - name: Install ansible.
       run: sudo bash -c 'apt install -y ansible'
 
