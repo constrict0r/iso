@@ -18,7 +18,7 @@ jobs:
       run: sudo bash -c 'apt update'
 
     - name: Install ansible.
-      run: sudo bash -c 'apt instal -y ansible'
+      run: sudo bash -c 'apt install -y ansible'
 
     - name: Install requirement role.
       run: sudo bash -c 'ansible-galaxy install constrict0r.iso'
